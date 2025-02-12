@@ -48,7 +48,7 @@ zpool create \
     -O keyformat=passphrase \
     -O keylocation=prompt \
     \
-    -O compression=zstd:2 \
+    -O compression=zstd:3 \
     \
     "$ENV_POOL_NAME" \
     mirror "$@"
