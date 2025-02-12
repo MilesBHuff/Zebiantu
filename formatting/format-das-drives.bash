@@ -16,11 +16,23 @@ if [[ $# -lt 2 ]]; then
     exit 1
 fi
 
-## Define variables
-ENV_FILE='./env.sh'; if [[ -f "$ENV_FILE" ]]; then source ./env.sh; else echo "ERROR: Missing '$ENV_FILE'."; exit 2; fi
-if [[ $ENV_HDD_SECTOR_SIZE -gt $ENV_SSD_SECTOR_SIZE ]]; then SECTOR_SIZE=$ENV_HDD_SECTOR_SIZE; else SECTOR_SIZE=$ENV_SSD_SECTOR_SIZE; fi
-ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'; ASHIFT=$([[ -x "$ASHIFT_SCRIPT" ]] && "$ASHIFT_SCRIPT" $SECTOR_SIZE)
-if [[ -z $ASHIFT ]]; then echo "ERROR: Misconfigured sector sizes in '$ENV_FILE'."; exit 3; fi
+## Get environment
+ENV_FILE='./env.sh'
+if [[ -f "$ENV_FILE" ]]; then
+    source ./env.sh
+else
+    echo "ERROR: Missing '$ENV_FILE'."
+    exit 2
+fi
+
+## Calculate ashift
+[[ $ENV_SSD_SECTOR_SIZE -gt $ENV_HDD_SECTOR_SIZE ]] && SECTOR_SIZE=$ENV_SSD_SECTOR_SIZE || SECTOR_SIZE=$ENV_HDD_SECTOR_SIZE
+ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'
+[[ -x "$ASHIFT_SCRIPT" ]] && ASHIFT=$("$ASHIFT_SCRIPT" $SECTOR_SIZE)
+if [[ -z $ASHIFT ]]; then
+    echo "ERROR: Misconfigured sector sizes in '$ENV_FILE'."
+    exit 3
+fi
 
 ## Create pool
 set -e
