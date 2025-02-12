@@ -17,5 +17,19 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
-## Define variables
-ENV_FILE='./env.sh'; if [[ -f "$ENV_FILE" ]]; then source ./env.sh; else echo "ERROR: Missing '$ENV_FILE'."; exit -1; fi
+## Partition the disk
+for DEVICE in "$@"; do
+    if [[ ! -b "$DEVICE" ]]; then
+        echo "ERROR: $DEVICE is not a valid block device." >&2
+        continue
+    fi
+    ## Create GPT partition table
+    sgdisk --zap-all "$DEVICE"
+    ## Create SLOG partition
+    sgdisk --new=1:0:+12G --typecode=1:BF01 --change-name=1:SLOG "$DEVICE"
+    ## Create SVDEV partition
+    sgdisk --new=2:0:0 --typecode=2:BF01 --change-name=2:SVDEV "$DEVICE"
+done
+
+## Done
+exit 0
