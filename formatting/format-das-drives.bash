@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: format-data-mirror.bash device0 device1 [device2 ...]"
+    echo "Usage: format-das-drives.bash device0 device1 [device2 ...]"
     echo
     echo 'Pass at least two block devices as arguments.'
     echo 'All specified devices will be made into mirrors of each other.'

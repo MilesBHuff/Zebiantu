@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function helptext {
-    echo 'Usage: format-data-mirror.bash device0 [device1 ...]'
+    echo 'Usage: partition-ssd.bash device0 [device1 ...]'
     echo
     echo 'Please pass as arguments all the block devices you wish to partition.'
     echo 'The provided block devices will all be given the same partition layout.'

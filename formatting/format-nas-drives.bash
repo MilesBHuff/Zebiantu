@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: format-data-mirror.bash 'device0 [device1 ...]' 'device0 [device1 ...]' 'device0 [device1 ...]'"
+    echo "Usage: format-nas-drives.bash 'device0 [device1 ...]' 'device0 [device1 ...]' 'device0 [device1 ...]'"
     echo
     echo 'The first argument is a space-delimited list of block devices to use for the main storage pool.'
     echo 'The second argument is a space-delimited list of block devices to use for the special vdev.'
