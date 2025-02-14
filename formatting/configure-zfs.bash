@@ -3,8 +3,8 @@
 
 ## Make sure we're root
 if [[ $EUID -ne 0 ]]; then
-  echo "ERROR: This script must be run as root." >&2
-  exit 1
+    echo "ERROR: This script must be run as root." >&2
+    exit 1
 fi
 
 ## Get environment variables
@@ -13,8 +13,8 @@ if [[ \
     -z "$ENV_ACCEPTABLE_DATA_LOSS_SECONDS" ||\
     -z "$ENV_SLOWEST_HDD_MAX_SPEED_MBPS" \
 ]]; then
-  echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
-  exit 3
+    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
+    exit 3
 fi
 
 ## Recreate the config file that this script manages.
