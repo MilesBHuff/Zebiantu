@@ -24,6 +24,14 @@ else
     echo "ERROR: Missing '$ENV_FILE'." >&2
     exit 2
 fi
+if [[
+    -z "$ENV_HDD_SECTOR_SIZE" ||\
+    -z "$ENV_SSD_SECTOR_SIZE" ||\
+    -z "$ENV_DAS_POOL_NAME"
+]]; then
+    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
+    exit 3
+fi
 
 ## Calculate ashift
 [[ $ENV_SSD_SECTOR_SIZE -gt $ENV_HDD_SECTOR_SIZE ]] && SECTOR_SIZE=$ENV_SSD_SECTOR_SIZE || SECTOR_SIZE=$ENV_HDD_SECTOR_SIZE
@@ -31,7 +39,7 @@ ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'
 [[ -x "$ASHIFT_SCRIPT" ]] && ASHIFT=$("$ASHIFT_SCRIPT" $SECTOR_SIZE)
 if [[ -z $ASHIFT ]]; then
     echo "ERROR: Misconfigured sector sizes in '$ENV_FILE'." >&2
-    exit 3
+    exit 4
 fi
 
 ## Create pool

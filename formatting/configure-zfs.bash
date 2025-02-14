@@ -13,8 +13,8 @@ if [[ \
     -z "$ENV_ACCEPTABLE_DATA_LOSS_SECONDS" ||\
     -z "$ENV_SLOWEST_HDD_MAX_SPEED_MBPS" \
 ]]; then
-  echo "ERROR: Missing environment variables." >&2
-  exit 2
+  echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
+  exit 3
 fi
 
 ## Recreate the config file that this script manages.
