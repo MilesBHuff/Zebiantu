@@ -17,3 +17,9 @@ export ENV_SLOWEST_SSD_MAX_SPEED_MBPS=550 #TODO: Measure
 
 export ENV_SLOWEST_HDD_AVG_SPEED_MBPS=125 #TODO: Measure
 export ENV_SLOWEST_SSD_AVG_SPEED_MBPS=300 #TODO: Measure
+
+export ESP_MOUNT_OPTIONS='noatime,lazytime,sync,flush,tz=UTC,iocharset=utf8,fmask=0137,dmask=0027,nodev,noexec,nosuid'
+export OS_MOUNT_OPTIONS='noatime,lazytime,ssd,discard=async,compress=lzo'
+
+export ESP_MDADM_PATH='/dev/md/esp'
+export OS_MDADM_PATH='/dev/md/os'
