@@ -6,6 +6,8 @@ function helptext {
     echo 'The provided block devices will all be given the same partition layout.'
     echo 'There will be an ESP partition, an OS partition, an SLOG partition, and an SVDEV partition.'
     echo
+    echo 'You can configure this script by editing `env.sh`.'
+    echo
     echo 'Warning: This script does not check validity. Make sure your block devices exist and are the same size.'
 }
 
@@ -13,6 +15,24 @@ function helptext {
 if [[ $# -lt 1 ]]; then
     helptext >&2
     exit 1
+fi
+
+## Get environment
+ENV_FILE='./env.sh'
+if [[ -f "$ENV_FILE" ]]; then
+    source ./env.sh
+else
+    echo "ERROR: Missing '$ENV_FILE'."
+    exit 2
+fi
+if [[
+    -z "$ESP_NAME" ||\
+    -z "$OS_NAME" ||\
+    -z "$SLOG_NAME" ||\
+    -z "$SVDEV_NAME"
+]]; then
+    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
+    exit 3
 fi
 
 ## Partition the disk
@@ -27,12 +47,12 @@ for DEVICE in "$@"; do
     ## Create GPT partition table
     sgdisk --zap-all "$DEVICE"
     ## Create ESP partition
-    sgdisk --new=1:2048:+500M --typecode=1:EF00 --change-name=1:ESP "$DEVICE"
+    sgdisk --new=1:2048:+500M --typecode=1:EF00 --change-name=1:"$ESP_NAME" "$DEVICE"
     ## Create Linux OS partition
-    sgdisk --new=2:0:+32G --typecode=2:8300 --change-name=2:OS "$DEVICE"
+    sgdisk --new=2:0:+32G --typecode=2:8300 --change-name=2:"$OS_NAME" "$DEVICE"
     ## Create SLOG partition
-    sgdisk --new=3:0:+12G --typecode=3:BF02 --change-name=3:SLOG "$DEVICE"
+    sgdisk --new=3:0:+12G --typecode=3:BF02 --change-name=3:"$SLOG_NAME" "$DEVICE"
     ## Create SVDEV partition
-    sgdisk --new=4:0:0 --typecode=4:BF02 --change-name=4:SVDEV "$DEVICE"
+    sgdisk --new=4:0:0 --typecode=4:BF02 --change-name=4:"$SVDEV_NAME" "$DEVICE"
 done
 exit $EXIT_CODE

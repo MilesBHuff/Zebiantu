@@ -26,7 +26,7 @@ else
 fi
 if [[
     -z "$ENV_SSD_SECTOR_SIZE" ||\
-    -z "$ESP_MDADM_PATH"
+    -z "$ESP_NAME"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -34,13 +34,13 @@ fi
 
 ## Format devices
 set -e
-mdadm --create --verbose "$ESP_MDADM_PATH" --level=1 --raid-devices=$# --metadata=1.0 "$@"
-mkfs.vfat -F 32 -S "$ENV_SSD_SECTOR_SIZE" -s 1 -h 0 "$ESP_MDADM_PATH" #NOTE: For 8K-native disks, pass: `-S 4096 -s 2`.
+mdadm --create --verbose --level=1 --raid-devices=$# --metadata=1.0 --name="$ESP_NAME" "/dev/md/$ESP_NAME" "$@"
+mkfs.vfat -F 32 -S "$ENV_SSD_SECTOR_SIZE" -s 1 -h 0 -n "$ESP_NAME" "/dev/md/$ESP_NAME" #NOTE: For 8K-native disks, pass: `-S 4096 -s 2`.
 
 ## First mount
 MOUNTPOINT="/tmp/mnt-$(uuidgen)"
 mkdir -p "$MOUNTPOINT"
-mount -o "${ESP_MOUNT_OPTIONS:-defaults}" "$ESP_MDADM_PATH" "$MOUNTPOINT"
+mount -o "${ESP_MOUNT_OPTIONS:-defaults}" "/dev/md/$ESP_NAME" "$MOUNTPOINT"
 sleep 1
 umount -f "$MOUNTPOINT"
 rmdir "$MOUNTPOINT"

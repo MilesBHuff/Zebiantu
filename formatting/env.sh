@@ -6,10 +6,10 @@
 export ENV_NAS_POOL_NAME='nas-pool'
 export ENV_DAS_POOL_NAME='das-pool'
 
-## Paths
-
-export ESP_MDADM_PATH='/dev/md/esp'
-export OS_MDADM_PATH='/dev/md/os'
+export ESP_NAME='esp'
+export OS_NAME='os'
+export SLOG_NAME='slog'
+export SVDEV_NAME='svdev'
 
 ## Mount Options
 
