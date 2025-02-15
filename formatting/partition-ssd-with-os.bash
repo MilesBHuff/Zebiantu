@@ -46,10 +46,10 @@ for DEVICE in "$@"; do
     fi
     ## Create GPT partition table
     sgdisk --zap-all "$DEVICE"
-    ## Create ESP partition
-    sgdisk --new=1:2048:+500M --typecode=1:EF00 --change-name=1:"$ESP_NAME" "$DEVICE"
+    ## Create ESP/Boot partition
+    sgdisk --new=1:2048:+2G --typecode=1:EF00 --change-name=1:"$ESP_NAME" "$DEVICE"
     ## Create Linux OS partition
-    sgdisk --new=2:0:+32G --typecode=2:8300 --change-name=2:"$OS_NAME" "$DEVICE"
+    sgdisk --new=2:0:+20G --typecode=2:8300 --change-name=2:"$OS_NAME" "$DEVICE"
     ## Create SLOG partition
     sgdisk --new=3:0:+12G --typecode=3:BF02 --change-name=3:"$SLOG_NAME" "$DEVICE"
     ## Create SVDEV partition
