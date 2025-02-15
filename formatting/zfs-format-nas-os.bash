@@ -27,7 +27,8 @@ else
 fi
 if [[
     -z "$ENV_SSD_SECTOR_SIZE" ||\
-    -z "$ENV_OS_POOL_NAME"
+    -z "$ENV_OS_POOL_NAME" ||\
+    -z "$ENV_SMALL_FILE_THRESHOLD"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -45,10 +46,10 @@ fi
 set -e
 zpool create \
     -o ashift="$ASHIFT" \
-    -O recordsize=64K \
+    -O recordsize="$ENV_SMALL_FILE_THRESHOLD" \
     \
     -O sync=standard \
-    -O logbias=latency \
+    -O logbias=throughput \
     \
     -O normalization=formD \
     -O casesensitivity=sensitive \

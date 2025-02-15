@@ -27,7 +27,8 @@ fi
 if [[
     -z "$ENV_HDD_SECTOR_SIZE" ||\
     -z "$ENV_SSD_SECTOR_SIZE" ||\
-    -z "$ENV_DAS_POOL_NAME"
+    -z "$ENV_DAS_POOL_NAME" ||\
+    -z "$ENV_LARGE_FILE_THRESHOLD"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -46,7 +47,7 @@ fi
 set -e
 zpool create \
     -o ashift="$ASHIFT" \
-    -O recordsize=256K \
+    -O recordsize="$ENV_LARGE_FILE_THRESHOLD" \
     \
     -O sync=disabled \
     -O logbias=latency \

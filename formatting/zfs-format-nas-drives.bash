@@ -32,7 +32,9 @@ fi
 if [[
     -z "$ENV_HDD_SECTOR_SIZE" ||\
     -z "$ENV_SSD_SECTOR_SIZE" ||\
-    -z "$ENV_NAS_POOL_NAME"
+    -z "$ENV_NAS_POOL_NAME" ||\
+    -z "$ENV_SMALL_FILE_THRESHOLD" ||\
+    -z "$ENV_LARGE_FILE_THRESHOLD"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -51,8 +53,8 @@ fi
 set -e
 zpool create \
     -o ashift="$ASHIFT" \
-    -O recordsize=256K \
-    -O special_small_blocks=64K \
+    -O recordsize="$ENV_LARGE_FILE_THRESHOLD" \
+    -O special_small_blocks="$ENV_SMALL_FILE_THRESHOLD" \
     \
     -O sync=standard \
     -O logbias=latency \
