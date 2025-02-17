@@ -35,7 +35,7 @@ fi
 ## Format devices
 set -e
 mdadm --create --verbose --level=1 --raid-devices=$# --metadata=1.0 --name="$ENV_ESP_NAME" "/dev/md/$ENV_ESP_NAME" "$@"
-mkfs.vfat -F 32 -f 2 -S "$ENV_SSD_SECTOR_SIZE" -s 1 -h 0 -n "$ENV_ESP_NAME" "/dev/md/$ENV_ESP_NAME" #NOTE: For 8K-native disks, pass: `-S 4096 -s 2`.
+mkfs.vfat -F 32 -f 2 -S "$ENV_SSD_SECTOR_SIZE" -s 1 -h 0 -n "${ENV_ESP_NAME^^}" "/dev/md/$ENV_ESP_NAME" #NOTE: For 8K-native disks, pass: `-S 4096 -s 2`.
 
 ## First mount
 MOUNTPOINT="/tmp/mnt-$(uuidgen)"

@@ -38,7 +38,7 @@ set -e
 mdadm --create --verbose --level=1 --raid-devices=$# --metadata=1.2 --name="$ENV_OS_NAME" "/dev/md/$ENV_OS_NAME" "$@"
 cryptsetup luksFormat "/dev/md/$ENV_OS_NAME"
 cryptsetup open "/dev/md/$ENV_OS_NAME" "$ENV_OS_LUKS_NAME"
-mkfs.btrfs -L "$ENV_OS_NAME" --sectorsize "$ENV_SSD_SECTOR_SIZE" -c lzo "/dev/mapper/$ENV_OS_LUKS_NAME"
+mkfs.btrfs -L "${ENV_OS_NAME^^}" --sectorsize "$ENV_SSD_SECTOR_SIZE" -c lzo "/dev/mapper/$ENV_OS_LUKS_NAME"
 
 ## First mount
 MOUNTPOINT="/tmp/mnt-$(uuidgen)"
