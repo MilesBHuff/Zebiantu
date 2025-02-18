@@ -27,11 +27,11 @@ chmod 644 "$FILE"
 echo "options zfs l2arc_write_max=$(($ENV_SLOWEST_SSD_MAX_SPEED_MBPS / 2))" >> "$FILE"
 echo "options zfs l2arc_write_boost=$(($ENV_THEORETICAL_MAX_SSD_SPEED_MBPS - ($ENV_SLOWEST_SSD_MAX_SPEED_MBPS / 2)))" >> "$FILE"
 ##
-echo "options zfs zfs_immediate_write_sz=$ENV_SMALL_FILE_THRESHOLD" >> "$FILE"
+echo 'options zfs zfs_immediate_write_sz=65536' >> "$FILE" #TODO: Derive value from `$ENV_SMALL_FILE_THRESHOLD`
 ##
 echo "options zfs zfs_txg_timeout=$ENV_ACCEPTABLE_DATA_LOSS_SECONDS" >> "$FILE"
-echo "options zfs zfs_txg_size_limit=$(($ENV_ACCEPTABLE_DATA_LOSS_SECONDS * ($ENV_SLOWEST_HDD_AVG_SPEED_MBPS * (1024**2))))" >> "$FILE"
-echo "options zfs zfs_txg_maxsize=$(($ENV_ACCEPTABLE_DATA_LOSS_SECONDS * ($ENV_THEORETICAL_MAX_HDD_SPEED_MBPS * (1024**2))))" >> "$FILE"
+echo "options zfs zfs_dirty_data_max=$(($ENV_ACCEPTABLE_DATA_LOSS_SECONDS * ($ENV_SLOWEST_HDD_AVG_SPEED_MBPS * (1024**2))))" >> "$FILE" ## Sanity check: Default is 4294967296 (4G)
+echo "options zfs zfs_dirty_data_max_max=$(($ENV_ACCEPTABLE_DATA_LOSS_SECONDS * ($ENV_THEORETICAL_MAX_HDD_SPEED_MBPS * (1024**2))))" >> "$FILE" ## Sanity check: Default is 4294967296 (4G)
 ##
 echo "options zfs zfs_prefetch_disable=0" >> "$FILE"
 echo "options zfs l2arc_noprefetch=0" >> "$FILE"
