@@ -17,9 +17,9 @@ if [[ $# -lt 2 ]]; then
 fi
 
 ## Get environment
-ENV_FILE='./env.sh'
+ENV_FILE='../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
-    source ./env.sh
+    source ../env.sh
 else
     echo "ERROR: Missing '$ENV_FILE'." >&2
     exit 2
