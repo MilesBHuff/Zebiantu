@@ -24,9 +24,11 @@ function rsyncoid {
         return 4
     }
 
-    local TIMESTAMP=$(date +"%Y-%m-%dT%H-%M-%S")
+    local TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
     rsync \
-        -ahAEHPSX --append-verify \
+        -hP -HS -aAEX -W --numeric-ids --no-compress --no-checksum --bwlimit=0 \
         "$1" "$2" \
-        2> >(tee "$LOGDIR/$TIMESTAMP.stderr.txt" >&2)
+        2> >(tee "$LOGDIR/rsyncoid_$TIMESTAMP.stderr.txt" >&2)
+    #NOTE: If updating data instead of copying for the first time, remove `-W --no-checksum` and add ` --append-verify`.
+    #NOTE: If you're sending this over the network, remove `--no-compress`.
 }
