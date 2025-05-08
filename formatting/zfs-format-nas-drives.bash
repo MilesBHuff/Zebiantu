@@ -78,7 +78,7 @@ zpool create \
     -O keyformat=passphrase \
     -O keylocation=prompt \
     \
-    -O compression=zstd-3 \
+    -O compression=lz4 \
     \
     -O canmount=on \
     -O mountpoint="$ENV_ZFS_ROOT/$ENV_NAS_POOL_NAME" \
