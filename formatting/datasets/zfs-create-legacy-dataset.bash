@@ -19,6 +19,21 @@ fi
 ## Variables
 DATASET_NAME='legacy'
 
+## Get environment
+ENV_FILE='../env.sh'
+if [[ -f "$ENV_FILE" ]]; then
+    source ../env.sh
+else
+    echo "ERROR: Missing '$ENV_FILE'."
+    exit 2
+fi
+if [[
+    -z "$ENV_ZFS_ROOT"
+]]; then
+    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
+    exit 3
+fi
+
 ## Create dataset
 set -e
 zfs create \
