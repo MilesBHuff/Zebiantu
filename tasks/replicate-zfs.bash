@@ -10,6 +10,8 @@ fi
 ## Get environment variables
 ENV_FILE='../env.sh'; if [[ -f "$ENV_FILE" ]]; then source ../env.sh; else echo "ERROR: Missing '$ENV_FILE'."; exit -1; fi
 if [[ \
+    -z "$ENV_POOL_NAME_DAS" ||\
+    -z "$ENV_POOL_NAME_NAS" ||\
     -z "$ENV_ZFS_ROOT"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
@@ -17,8 +19,8 @@ if [[ \
 fi
 
 ## Variables
-[[ ! -z "$1" ]] && SRC_DS="$1" || SRC_DS="$ENV_NAS_POOL_NAME"
-[[ ! -z "$2" ]] && OUT_DS_PARENT="$2" || OUT_DS_PARENT="$ENV_DAS_POOL_NAME"
+[[ ! -z "$1" ]] && SRC_DS="$1" || SRC_DS="$ENV_POOL_NAME_NAS"
+[[ ! -z "$2" ]] && OUT_DS_PARENT="$2" || OUT_DS_PARENT="$ENV_POOL_NAME_DAS"
 OUT_DS="$OUT_DS_PARENT/$SRC_DS"
 ## "DS" -> "Dataset"
 ## "SRC" -> "Source"

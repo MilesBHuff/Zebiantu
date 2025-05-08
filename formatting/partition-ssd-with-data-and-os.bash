@@ -26,10 +26,10 @@ else
     exit 2
 fi
 if [[
-    -z "$ENV_ESP_NAME" ||\
-    -z "$ENV_OS_NAME" ||\
-    -z "$ENV_SLOG_NAME" ||\
-    -z "$ENV_SVDEV_NAME"
+    -z "$ENV_NAME_ESP" ||\
+    -z "$ENV_NAME_OS" ||\
+    -z "$ENV_NAME_SLOG" ||\
+    -z "$ENV_NAME_SVDEV"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -47,12 +47,12 @@ for DEVICE in "$@"; do
     ## Create GPT partition table
     sgdisk --zap-all "$DEVICE"
     ## Create ESP/Boot partition
-    sgdisk --new=1:2048:+2G --typecode=1:EF00 --change-name=1:"${ENV_ESP_NAME^^}" "$DEVICE"
+    sgdisk --new=1:2048:+2G --typecode=1:EF00 --change-name=1:"${ENV_NAME_ESP^^}" "$DEVICE"
     ## Create Linux OS partition
-    sgdisk --new=2:0:+20G --typecode=2:8300 --change-name=2:"${ENV_OS_NAME^^}" "$DEVICE"
+    sgdisk --new=2:0:+20G --typecode=2:8300 --change-name=2:"${ENV_NAME_OS^^}" "$DEVICE"
     ## Create SLOG partition
-    sgdisk --new=3:0:+12G --typecode=3:BF02 --change-name=3:"${ENV_SLOG_NAME^^}" "$DEVICE"
+    sgdisk --new=3:0:+12G --typecode=3:BF02 --change-name=3:"${ENV_NAME_SLOG^^}" "$DEVICE"
     ## Create SVDEV partition
-    sgdisk --new=4:0:0 --typecode=4:BF02 --change-name=4:"${ENV_SVDEV_NAME^^}" "$DEVICE"
+    sgdisk --new=4:0:0 --typecode=4:BF02 --change-name=4:"${ENV_NAME_SVDEV^^}" "$DEVICE"
 done
 exit $EXIT_CODE

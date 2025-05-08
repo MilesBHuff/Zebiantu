@@ -30,11 +30,11 @@ else
     exit 2
 fi
 if [[
-    -z "$ENV_HDD_SECTOR_SIZE" ||\
-    -z "$ENV_HDD_RECORDSIZE" ||\
-    -z "$ENV_NAS_POOL_NAME" ||\
-    -z "$ENV_SMALL_FILE_THRESHOLD" ||\
-    -z "$ENV_SSD_SECTOR_SIZE" ||\
+    -z "$ENV_POOL_NAME_NAS" ||\
+    -z "$ENV_RECORDSIZE_HDD" ||\
+    -z "$ENV_SECTOR_SIZE_HDD" ||\
+    -z "$ENV_SECTOR_SIZE_SSD" ||\
+    -z "$ENV_THRESHOLD_SMALL_FILE" ||\
     -z "$ENV_ZPOOL_ATIME" ||\
     -z "$ENV_ZPOOL_CASESENSITIVITY" ||\
     -z "$ENV_ZPOOL_CHECKSUM" ||\
@@ -48,7 +48,7 @@ fi
 ZPOOL_REDUNDANT_METADATA='most'
 
 ## Calculate ashift
-[[ $ENV_SSD_SECTOR_SIZE -gt $ENV_HDD_SECTOR_SIZE ]] && SECTOR_SIZE=$ENV_SSD_SECTOR_SIZE || SECTOR_SIZE=$ENV_HDD_SECTOR_SIZE
+[[ $ENV_SECTOR_SIZE_SSD -gt $ENV_SECTOR_SIZE_HDD ]] && SECTOR_SIZE=$ENV_SECTOR_SIZE_SSD || SECTOR_SIZE=$ENV_SECTOR_SIZE_HDD
 ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'
 [[ -x "$ASHIFT_SCRIPT" ]] && ASHIFT=$("$ASHIFT_SCRIPT" $SECTOR_SIZE)
 if [[ -z $ASHIFT ]]; then
@@ -60,8 +60,8 @@ fi
 set -e
 zpool create \
     -o ashift="$ASHIFT" \
-    -O recordsize="$ENV_HDD_RECORDSIZE" \
-    -O special_small_blocks="$ENV_SMALL_FILE_THRESHOLD" \
+    -O recordsize="$ENV_RECORDSIZE_HDD" \
+    -O special_small_blocks="$ENV_THRESHOLD_SMALL_FILE" \
     \
     -O sync=standard \
     -O logbias=latency \
@@ -88,9 +88,9 @@ zpool create \
     -O compression="$ENV_ZPOOL_COMPRESSION" \
     \
     -O canmount=on \
-    -O mountpoint="$ENV_ZFS_ROOT/$ENV_NAS_POOL_NAME" \
+    -O mountpoint="$ENV_ZFS_ROOT/$ENV_POOL_NAME_NAS" \
     \
-    "$ENV_NAS_POOL_NAME" \
+    "$ENV_POOL_NAME_NAS" \
     mirror $1 \
     special mirror $2 \
     log mirror $3

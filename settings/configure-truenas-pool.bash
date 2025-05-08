@@ -10,9 +10,9 @@ fi
 ## Get environment variables
 ENV_FILE='../env.sh'; if [[ -f "$ENV_FILE" ]]; then source ../env.sh; else echo "ERROR: Missing '$ENV_FILE'."; exit -1; fi
 if [[ \
-    -z "$ENV_ACCEPTABLE_DATA_LOSS_SECONDS" ||\
-    -z "$ENV_SLOWEST_HDD_MAX_SPEED_MBPS" ||\
-    -z "$ENV_SMALL_FILE_THRESHOLD"
+    -z "$ENV_SECONDS_DATA_LOSS_ACCEPTABLE" ||\
+    -z "$ENV_SPEED_MBPS_MAX_SLOWEST_HDD" ||\
+    -z "$ENV_THRESHOLD_SMALL_FILE"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -23,5 +23,5 @@ POOL_NAME='boot-pool'
 zfs set atime=off "$POOL_NAME"
 zfs set compression=lz4 "$POOL_NAME"
 zfs set logbias=throughput "$POOL_NAME"
-zfs set recordsize="$ENV_SSD_RECORDSIZE" "$POOL_NAME"
+zfs set recordsize="$ENV_RECORDSIZE_SSD" "$POOL_NAME"
 exit 0

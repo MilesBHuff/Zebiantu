@@ -30,9 +30,9 @@ else
     exit 2
 fi
 if [[
-    -z "$ENV_SSD_SECTOR_SIZE" ||\
-    -z "$ENV_OS_POOL_NAME" ||\
-    -z "$ENV_SSD_RECORDSIZE" ||\
+    -z "$ENV_POOL_NAME_OS" ||\
+    -z "$ENV_RECORDSIZE_SSD" ||\
+    -z "$ENV_SECTOR_SIZE_SSD" ||\
     -z "$ENV_ZPOOL_ATIME" ||\
     -z "$ENV_ZPOOL_CASESENSITIVITY" ||\
     -z "$ENV_ZPOOL_CHECKSUM" ||\
@@ -56,7 +56,7 @@ fi
 set -e
 zpool create \
     -o ashift="$ASHIFT" \
-    -O recordsize="$ENV_SSD_RECORDSIZE" \
+    -O recordsize="$ENV_RECORDSIZE_SSD" \
     \
     -O sync=standard \
     -O logbias=throughput \
@@ -85,6 +85,6 @@ zpool create \
     -O canmount=on \
     -O mountpoint=/ \
     \
-    "$ENV_OS_POOL_NAME" \
+    "$ENV_POOL_NAME_OS" \
     mirror "$@"
 exit $?
