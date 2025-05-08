@@ -15,7 +15,9 @@ if [[ $# -lt 1 ]]; then
     helptext >&2
     exit 1
 fi
-[[ $# -gt 1 ]] && MIRROR='mirror'
+
+## Configure mirror-related settings
+[[ $# -gt 1 ]] && MIRROR='mirror' && ZPOOL_REDUNDANT_METADATA='most' || ZPOOL_REDUNDANT_METADATA='all'
 
 ## Get environment
 ENV_FILE='../env.sh'
@@ -26,10 +28,16 @@ else
     exit 2
 fi
 if [[
-    -z "$ENV_HDD_SECTOR_SIZE" ||\
-    -z "$ENV_SSD_SECTOR_SIZE" ||\
     -z "$ENV_DAS_POOL_NAME" ||\
-    -z "$ENV_HDD_RECORDSIZE"
+    -z "$ENV_HDD_SECTOR_SIZE" ||\
+    -z "$ENV_HDD_RECORDSIZE" ||\
+    -z "$ENV_SSD_SECTOR_SIZE" ||\
+    -z "$ENV_ZPOOL_ATIME" ||\
+    -z "$ENV_ZPOOL_CASESENSITIVITY" ||\
+    -z "$ENV_ZPOOL_CHECKSUM" ||\
+    -z "$ENV_ZPOOL_COMPRESSION" ||\
+    -z "$ENV_ZPOOL_ENCRYPTION" ||\
+    -z "$ENV_ZPOOL_NORMALIZATION"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -53,10 +61,10 @@ zpool create \
     -O sync=disabled \
     -O logbias=latency \
     \
-    -O normalization=formD \
-    -O casesensitivity=sensitive \
+    -O normalization="$ENV_ZPOOL_NORMALIZATION" \
+    -O casesensitivity="$ENV_ZPOOL_CASESENSITIVITY" \
     \
-    -O atime=off \
+    -O atime="$ENV_ZPOOL_ATIME" \
     \
     -O xattr=sa \
     -O acltype=posixacl \
@@ -64,15 +72,15 @@ zpool create \
     -O aclmode=passthrough \
     \
     -O dnodesize=auto \
-    -O redundant_metadata=most \
+    -O redundant_metadata="$ZPOOL_REDUNDANT_METADATA" \
     \
-    -O checksum=blake3 \
+    -O checksum="$ENV_ZPOOL_CHECKSUM" \
     \
-    -O encryption=aes-256-gcm \
+    -O encryption="$ENV_ZPOOL_ENCRYPTION" \
     -O keyformat=passphrase \
     -O keylocation=prompt \
     \
-    -O compression=lz4 \
+    -O compression="$ENV_ZPOOL_COMPRESSION" \
     \
     -O canmount=on \
     -O mountpoint="$ENV_ZFS_ROOT/$ENV_DAS_POOL_NAME" \

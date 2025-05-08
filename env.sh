@@ -49,3 +49,12 @@ export ENV_HDD_RECORDSIZE='256K'
 export ENV_SSD_RECORDSIZE='64K'
 
 export ENV_SMALL_FILE_THRESHOLD='128K' ## Theoretically I'd do 64K, but my specific data is still at less than 5% when including all files up to 128K.
+
+## Root ZPool Options
+
+export ENV_ZPOOL_NORMALIZATION='formD'
+export ENV_ZPOOL_CASESENSITIVITY='sensitive'
+export ENV_ZPOOL_ATIME='off'
+export ENV_ZPOOL_ENCRYPTION='aes-256-gcm'
+export ENV_ZPOOL_CHECKSUM='blake3'
+export ENV_ZPOOL_COMPRESSION='lz4'

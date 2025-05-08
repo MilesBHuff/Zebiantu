@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: zfs-format-nas-os.bash device0 device1 [device2 ...]"
+    echo "Usage: zfs-format-nas-os.bash device0 [device1 ...]"
     echo
-    echo 'Pass at least two block devices as arguments.'
-    echo 'All specified devices will be made into mirrors of each other.'
+    echo 'Pass at least one block device as an argument.'
+    echo 'If more than one device is specified, then all will be made into mirrors of each other.'
     echo
     echo 'You can configure this script by editing `env.sh`.'
     echo
@@ -13,10 +13,13 @@ function helptext {
 }
 
 ## Validate parameters
-if [[ $# -lt 2 ]]; then
+if [[ $# -lt 1 ]]; then
     helptext >&2
     exit 1
 fi
+
+## Configure mirror-related settings
+[[ $# -gt 1 ]] && MIRROR='mirror' && ZPOOL_REDUNDANT_METADATA='most' || ZPOOL_REDUNDANT_METADATA='all'
 
 ## Get environment
 ENV_FILE='../env.sh'
@@ -29,7 +32,13 @@ fi
 if [[
     -z "$ENV_SSD_SECTOR_SIZE" ||\
     -z "$ENV_OS_POOL_NAME" ||\
-    -z "$ENV_SMALL_FILE_THRESHOLD"
+    -z "$ENV_SSD_RECORDSIZE" ||\
+    -z "$ENV_ZPOOL_ATIME" ||\
+    -z "$ENV_ZPOOL_CASESENSITIVITY" ||\
+    -z "$ENV_ZPOOL_CHECKSUM" ||\
+    -z "$ENV_ZPOOL_COMPRESSION" ||\
+    -z "$ENV_ZPOOL_ENCRYPTION" ||\
+    -z "$ENV_ZPOOL_NORMALIZATION"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
@@ -47,15 +56,15 @@ fi
 set -e
 zpool create \
     -o ashift="$ASHIFT" \
-    -O recordsize="$ENV_SMALL_FILE_THRESHOLD" \
+    -O recordsize="$ENV_SSD_RECORDSIZE" \
     \
     -O sync=standard \
     -O logbias=throughput \
     \
-    -O normalization=formD \
-    -O casesensitivity=sensitive \
+    -O normalization="$ENV_ZPOOL_NORMALIZATION" \
+    -O casesensitivity="$ENV_ZPOOL_CASESENSITIVITY" \
     \
-    -O atime=off \
+    -O atime="$ENV_ZPOOL_ATIME" \
     \
     -O xattr=sa \
     -O acltype=posixacl \
@@ -63,15 +72,15 @@ zpool create \
     -O aclmode=passthrough \
     \
     -O dnodesize=auto \
-    -O redundant_metadata=most \
+    -O redundant_metadata="$ZPOOL_REDUNDANT_METADATA" \
     \
-    -O checksum=blake3 \
+    -O checksum="$ENV_ZPOOL_CHECKSUM" \
     \
-    -O encryption=aes-256-gcm \
+    -O encryption="$ENV_ZPOOL_ENCRYPTION" \
     -O keyformat=passphrase \
     -O keylocation=prompt \
     \
-    -O compression=lz4 \
+    -O compression="$ENV_ZPOOL_COMPRESSION" \
     \
     -O canmount=on \
     -O mountpoint=/ \
