@@ -45,7 +45,7 @@ fi
 
 ## Calculate ashift
 [[ $ENV_SECTOR_SIZE_SSD -gt $ENV_SECTOR_SIZE_HDD ]] && SECTOR_SIZE=$ENV_SECTOR_SIZE_SSD || SECTOR_SIZE=$ENV_SECTOR_SIZE_HDD
-ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'
+ASHIFT_SCRIPT='./helpers/calculate-power-of-two.bash'
 [[ -x "$ASHIFT_SCRIPT" ]] && ASHIFT=$("$ASHIFT_SCRIPT" $SECTOR_SIZE)
 if [[ -z $ASHIFT ]]; then
    echo "ERROR: Misconfigured sector sizes in '$ENV_FILE'." >&2
@@ -54,7 +54,7 @@ fi
 
 ## Create pool
 set -e
-zpool create \
+zpool create -f \
     -o ashift="$ASHIFT" \
     -O recordsize="$ENV_RECORDSIZE_HDD" \
     \
@@ -86,5 +86,5 @@ zpool create \
     -O mountpoint="$ENV_ZFS_ROOT/$ENV_POOL_NAME_DAS" \
     \
     "$ENV_POOL_NAME_DAS" \
-    "$MIRROR" "$@"
+    $MIRROR "$@"
 exit $?

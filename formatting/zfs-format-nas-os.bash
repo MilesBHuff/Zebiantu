@@ -45,7 +45,7 @@ if [[
 fi
 
 ## Calculate ashift
-ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'
+ASHIFT_SCRIPT='./helpers/calculate-power-of-two.bash'
 [[ -x "$ASHIFT_SCRIPT" ]] && ASHIFT=$("$ASHIFT_SCRIPT" $SSD_SECTOR_SIZE)
 if [[ -z $ASHIFT ]]; then
    echo "ERROR: Misconfigured sector sizes in '$ENV_FILE'." >&2

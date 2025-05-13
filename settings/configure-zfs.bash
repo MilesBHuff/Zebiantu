@@ -27,7 +27,8 @@ chmod 644 "$FILE"
 echo "options zfs l2arc_write_max=$(($ENV_SPEED_MBPS_MAX_SLOWEST_SSD / 2))" >> "$FILE"
 echo "options zfs l2arc_write_boost=$(($ENV_SPEED_MBPS_MAX_THEORETICAL_SSD - ($ENV_SPEED_MBPS_MAX_SLOWEST_SSD / 2)))" >> "$FILE"
 ##
-echo "options zfs zfs_immediate_write_sz=$((${ENV_THRESHOLD_SMALL_FILE#K} * 1024))" >> "$FILE"
+#echo "options zfs zfs_immediate_write_sz=$((${ENV_THRESHOLD_SMALL_FILE#K} * 1024))" >> "$FILE"
+echo "options zfs zfs_immediate_write_sz=128K" >> "$FILE"
 ##
 echo "options zfs zfs_txg_timeout=$ENV_SECONDS_DATA_LOSS_ACCEPTABLE" >> "$FILE"
 echo "options zfs zfs_dirty_data_max=$(($ENV_SECONDS_DATA_LOSS_ACCEPTABLE * ($ENV_SPEED_MBPS_AVG_SLOWEST_HDD * (1024**2))))" >> "$FILE" ## Sanity check: Default is 4294967296 (4GiB)

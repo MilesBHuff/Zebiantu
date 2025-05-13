@@ -14,6 +14,8 @@ export ENV_NAME_SVDEV='svdev'
 
 export ENV_NAME_OS_LUKS="crypt-$ENV_NAME_OS"
 
+export ENV_SNAPSHOT_NAME_INITIAL='initial'
+
 ## Paths
 
 export ENV_ZFS_ROOT='/media/zfs'
@@ -61,5 +63,5 @@ export ENV_ZPOOL_ENCRYPTION='aes-256-gcm'
 export ENV_ZPOOL_CHECKSUM='blake3'
 
 export ENV_ZPOOL_COMPRESSION_FREE='lz4' ## Practically no performance implication
-export ENV_ZPOOL_COMPRESSION_BALANCED='zstd:2' ## Best ratio of CPU time to filesize
-export ENV_ZPOOL_COMPRESSION_MOST='zstd:9' #TODO: Benchmark different zstds, and find the highest level that doesn't decrease performance
+export ENV_ZPOOL_COMPRESSION_BALANCED='zstd-2' ## Best ratio of CPU time to filesize
+export ENV_ZPOOL_COMPRESSION_MOST='zstd-9' #TODO: Benchmark different zstds, and find the highest level that doesn't decrease performance

@@ -49,7 +49,7 @@ ZPOOL_REDUNDANT_METADATA='most'
 
 ## Calculate ashift
 [[ $ENV_SECTOR_SIZE_SSD -gt $ENV_SECTOR_SIZE_HDD ]] && SECTOR_SIZE=$ENV_SECTOR_SIZE_SSD || SECTOR_SIZE=$ENV_SECTOR_SIZE_HDD
-ASHIFT_SCRIPT='./helpers/calculate-powers-of-two.bash'
+ASHIFT_SCRIPT='./helpers/calculate-power-of-two.bash'
 [[ -x "$ASHIFT_SCRIPT" ]] && ASHIFT=$("$ASHIFT_SCRIPT" $SECTOR_SIZE)
 if [[ -z $ASHIFT ]]; then
    echo "ERROR: Misconfigured sector sizes in '$ENV_FILE'." >&2

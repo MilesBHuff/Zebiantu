@@ -28,6 +28,7 @@ else
     exit 2
 fi
 if [[
+    -z "$ENV_SNAPSHOT_NAME_INITIAL" ||\
     -z "$ENV_ZFS_ROOT" ||\
     -z "$ENV_ZPOOL_COMPRESSION_MOST"
 ]]; then
@@ -48,4 +49,7 @@ zfs create \
     -o mountpoint="$ENV_ZFS_ROOT/$1/$DATASET_NAME" \
     \
     "$1/$DATASET_NAME"
-exit $?
+set +e
+declare -i EXIT_CODE=$?
+zfs snapshot "$1/$DATASET_NAME@$ENV_SNAPSHOT_NAME_INITIAL"
+exit $EXIT_CODE
