@@ -63,6 +63,12 @@ fi
 ## Are we adding an L2ARC?
 [[ $# -eq 4 ]] && CACHE="cache $4"
 
+## Clear out old labels and partitions (necessary to avoid issues on import later)
+for DEVICE in "${1[@]}"; do
+    zpool labelclear -f "$DEVICE"
+    wipefs -a "$DEVICE"
+done
+
 ## Create pool
 set -e
 zpool create -f \
@@ -91,7 +97,7 @@ zpool create -f \
     -O encryption="$ENV_ZPOOL_ENCRYPTION" \
     -O pbkdf2iters="$ENV_ZPOOL_PBKDF2ITERS" \
     -O keyformat=passphrase \
-    -O keylocation=prompt \
+    -O keylocation="/env/zfs/keys/$ENV_POOL_NAME_NAS.key" \
     \
     -O compression="$ENV_ZPOOL_COMPRESSION_BALANCED" \
     \
@@ -103,8 +109,11 @@ zpool create -f \
     special mirror $2 \
     log mirror $3 \
     $CACHE
-declare -i EXIT_CODE=$?
-zfs snapshot "${ENV_POOL_NAME_NAS}@initial"
+
+## First import
+zpool export "$ENV_POOL_NAME_NAS"
+zpool import -d /dev/disk/by-id "$ENV_POOL_NAME_NAS"
+zfs load-key "$ENV_POOL_NAME_NAS"
 
 ## Configure partitions
 sgdisk --typecode=1:bf02 "$4" ## Makes more sense for the cache device to use this code than the default.
@@ -116,4 +125,5 @@ for DEVICE in "${1[@]}"; do
 do
 
 ## Done
-exit $EXIT_CODE
+zfs snapshot "${ENV_POOL_NAME_NAS}@initial"
+exit 0

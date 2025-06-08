@@ -180,19 +180,45 @@ echo 'WARN: To use SecureBoot, you need to generate a private key, enroll it in 
 ## Set up ZFS in the initramfs
 echo ':: Configuring the initramfs to support ZFS...'
 apt install -y zfs-initramfs
-KEYFILE=/etc/zfs/zroot.key
+KEYDIR=/etc/zfs/keys
+chmod 700 "$KEYDIR"
+KEYFILE="$KEYDIR/$ENV_POOL_NAME_OS.key"
 touch "$KEYFILE"
-chmod 600 "$KEYFILE"
 read -p "A file is about to open; enter your ZFS encryption password into it. This is necessary to prevent double-prompting during boot. Press 'Enter' to continue. " FOO
 nano "$KEYFILE"
 zfs set keylocation=file://"$KEYFILE" "$ENV_POOL_NAME_OS"
 echo 'UMASK=0077' > /etc/initramfs-tools/conf.d/umask.conf
-echo "FILES='$KEYFILE'" > /etc/initramfs-tools/conf.d/99-zfs-key.conf
+echo "FILES=\"$KEYDIR/*\"" > /etc/initramfs-tools/conf.d/99-zfs-keys.conf
+
+## Prettify zpool display
+cat > /etc/zfs/vdev_id.conf <<EOF
+## ATA HDDs
+alias hdd ata-H*
+alias hdd ata-IC*
+alias hdd ata-M*
+alias hdd ata-MX*
+alias hdd ata-ST*
+alias hdd ata-WD*
+
+## ATA SSDs
+alias ssd ata-CSSD*
+alias ssd ata-CT*
+alias ssd ata-MT*
+alias ssd ata-OCZSSD*
+alias ssd ata-SSD*
+
+## Other
+alias mdm ata-md*
+alias nvm ata-nvme*
+alias usb ata-usb*
+alias dev ata-wwn*
+EOF
+echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
 
 ## Enable swap
 echo ':: Configuring swap...'
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=12 zswap.compressor=lzo" #NOTE: Fractional percents (eg, `12.5`) are not possible.
-apt install -y zram-tools systemd-zram-generator
+apt install -y systemd-zram-generator
 cat > /etc/systemd/zram-generator.conf <<'EOF'
 [zram0]
 zram-size = "ram * 0.375"

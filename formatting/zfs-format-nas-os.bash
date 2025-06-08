@@ -78,7 +78,7 @@ zpool create -f \
     -O encryption="$ENV_ZPOOL_ENCRYPTION" \
     -O pbkdf2iters="$ENV_ZPOOL_PBKDF2ITERS" \
     -O keyformat=passphrase \
-    -O keylocation=prompt \
+    -O keylocation="/env/zfs/keys/$ENV_POOL_NAME_OS.key" \
     \
     -O compression="$ENV_ZPOOL_COMPRESSION_FREE" \
     \
@@ -89,10 +89,15 @@ zpool create -f \
     "$ENV_POOL_NAME_OS" \
     mirror "$@"
     # -O checksum="$ENV_ZPOOL_CHECKSUM" \ ## Debian sucks and ships an ancient version of ZFS that doesn't support BLAKE3, and there is no canonical way to get ZFS 2.2 onto Bookworm. Shit distro.
-    zfs snapshot "${ENV_POOL_NAME_OS}@initial"
+
+## First import
+zpool export "$ENV_POOL_NAME_OS"
+zpool import -d /dev/disk/by-id "$ENV_POOL_NAME_OS"
+zfs load-key "$ENV_POOL_NAME_OS"
 
 ## Create datasets
 bash ./datasets/zfs-create-os-datasets.bash
 
 ## Done
+zfs snapshot "${ENV_POOL_NAME_OS}@initial"
 exit 0

@@ -79,7 +79,7 @@ zpool create -f \
     -O encryption="$ENV_ZPOOL_ENCRYPTION" \
     -O pbkdf2iters="$ENV_ZPOOL_PBKDF2ITERS" \
     -O keyformat=passphrase \
-    -O keylocation=prompt \
+    -O keylocation="/env/zfs/keys/$ENV_POOL_NAME_DAS.key" \
     \
     -O compression="$ENV_ZPOOL_COMPRESSION_BALANCED" \
     \
@@ -88,7 +88,11 @@ zpool create -f \
     \
     "$ENV_POOL_NAME_DAS" \
     $MIRROR "$@"
-declare -i EXIT_CODE=$?
+
+## First import
+zpool export "$ENV_POOL_NAME_DAS"
+zpool import -d /dev/disk/by-id "$ENV_POOL_NAME_DAS"
+zfs load-key "$ENV_POOL_NAME_DAS"
 
 ## Configure partitions
 for DEVICE in "${@[@]}"; do
@@ -97,4 +101,5 @@ for DEVICE in "${@[@]}"; do
 do
 
 ## Done
-exit $EXIT_CODE
+zfs snapshot "${ENV_POOL_NAME_DAS}@initial"
+exit 0

@@ -65,7 +65,7 @@ zpool set bootfs="$ENV_POOL_NAME_OS/OS/debian" "$ENV_POOL_NAME_OS"
 ## Ensure that `/etc/zfs/zpool.cache` exists and that everything is mounted.
 if [[ ! -f '/etc/zfs/zpool.cache' ]]; then
     zpool export -f "$ENV_POOL_NAME_OS"
-    zpool import -N -R "$ENV_ZFS_ROOT/$ENV_POOL_NAME_OS" "$ENV_POOL_NAME_OS"
+    zpool import -d /dev/disk/by-id -R "$ENV_ZFS_ROOT/$ENV_POOL_NAME_OS" -N "$ENV_POOL_NAME_OS"
     zfs load-key "$ENV_POOL_NAME_OS"
     zfs mount "$ENV_POOL_NAME_OS/OS/debian"
     zfs mount "$ENV_POOL_NAME_OS/data/var"
