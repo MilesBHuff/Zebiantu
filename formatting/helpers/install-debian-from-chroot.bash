@@ -281,9 +281,12 @@ for FILE in /etc/logrotate.conf /etc/logrotate.d/*; do
     fi
 done
 
+## Reconfigure FSH
+echo ':: Modifying filesystem hierarchy...'
+bash ../configure-filesystem-hierarchy.bash
+
 ## Wrap up
 echo ':: Wrapping up...'
-bash ../configure-filesystem-hierarchy.bash
 zfs set org.zfsbootmenu:commandline="$KERNEL_COMMANDLINE" "$ENV_POOL_NAME_OS/OS/debian"
 update-initramfs -u
 zfs snapshot -r os-pool@install-debian
