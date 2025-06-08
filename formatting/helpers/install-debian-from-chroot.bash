@@ -255,7 +255,7 @@ apt install -y firmware-linux-free firmware-linux-nonfree firmware-misc-nonfree
 ## General firmware tools
 apt install -y fwupd iasl
 ## General hardware tools
-apt install -y cpufrequtils i2c-tools ethtool fancontrol lm-sensors lshw net-tools pciutils read-edid rng-tools-debian smartmontools tpm2-tools usbutils
+apt install -y cpufrequtils i2c-tools ethtool fancontrol lm-sensors lshw net-tools pciutils read-edid rng-tools-debian smartmontools tpm2-tools usbutils sysstat dmsetup
 # sensors detect
 systemctl enable rng-tools-debian
 ## Specific firmware
@@ -274,7 +274,7 @@ apt install -y popularity-contest
 ## Common applications
 apt install -y cups rsync unzip
 ## Niche applications
-# apt install -y
+apt install -y sanoid
 
 ## More configuration
 echo ':: Additional configurations...'
