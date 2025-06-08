@@ -217,11 +217,11 @@ echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you
 
 ## Enable swap
 echo ':: Configuring swap...'
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=12 zswap.compressor=lzo" #NOTE: Fractional percents (eg, `12.5`) are not possible.
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=17 zswap.compressor=lzo" #NOTE: Fractional percents (eg, `12.5`) are not possible.
 apt install -y systemd-zram-generator
 cat > /etc/systemd/zram-generator.conf <<'EOF'
 [zram0]
-zram-size = "ram * 0.375"
+zram-size = "ram * 0.3333333"
 compression-algorithm = "zstd"
 swap-priority = 32767
 #TODO: Specify zstd level.
