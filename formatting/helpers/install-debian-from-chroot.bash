@@ -64,6 +64,16 @@ read -p "Note: 8x16 is considered kinda the standard size. Bold is easiest to re
 dpkg-reconfigure console-setup
 dpkg-reconfigure keyboard-configuration
 dpkg-reconfigure tzdata
+
+## Set up /etc/skel
+echo ':: Creating user configs...'
+apt install -y tmux
+echo 'set -g status-position top' > /etc/skel/.tmux.conf
+echo >> /etc/.bashrc
+echo 'shopt -q login_shell && [[ -x $(which tmux) ]] && [[ ! -n "$TMUX" ]] && exec tmux' >> /etc/.bashrc
+
+## Configure users
+echo ':: Configuring users...'
 echo 'Please enter a complex password for the root user: '
 passwd
 for FILE in $(ls -A /etc/skel); do cp "$FILE" /root/; done
@@ -262,7 +272,7 @@ echo ':: Installing applications...'
 tasksel --new-install
 apt install -y popularity-contest
 ## Common applications
-apt install -y cups rsync tmux unzip
+apt install -y cups rsync unzip
 ## Niche applications
 # apt install -y
 
@@ -271,7 +281,6 @@ echo ':: Additional configurations...'
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1"
 read -p 'Please enter your wireless regulatory domain: ('US' for the USA) ' REGDOM
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE cfg80211.ieee80211_regdom=$REGDOM"
-echo 'set -g status-position top' > ~/.tmux.conf
 
 ## Disable various compressions (ZFS does compression for us.)
 echo ':: Avoiding double-compression...'
