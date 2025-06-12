@@ -149,7 +149,7 @@ Global:
   PreHooksDir: /etc/zfsbootmenu/generate-zbm.pre.d
   PostHooksDir: /etc/zfsbootmenu/generate-zbm.post.d
 Kernel:
-  CommandLine: ro quiet loglevel=5 init_on_alloc=0
+  CommandLine: ro quiet loglevel=5 init_on_alloc=0 random.trust_cpu=off
 # Path: ''
 # Version: ''
 # Prefix: ''
@@ -298,9 +298,9 @@ apt install -y firmware-linux-free firmware-linux-nonfree firmware-misc-nonfree
 ## General firmware tools
 apt install -y fwupd iasl
 ## General hardware tools
-apt install -y cpufrequtils i2c-tools ethtool fancontrol lm-sensors lshw net-tools pciutils read-edid rng-tools-debian smartmontools tpm2-tools usbutils sysstat dmsetup
-# sensors detect
-systemctl enable rng-tools-debian
+apt install -y cpufrequtils i2c-tools ethtool fancontrol lm-sensors lshw net-tools pciutils read-edid smartmontools tpm2-tools usbutils sysstat dmsetup # rng-tools-debian
+sensors detect
+# systemctl enable rng-tools-debian
 ## Specific firmware
 apt install -y amd64-microcode firmware-amd-graphics firmware-mellanox firmware-realtek
 ## Specific drivers
@@ -327,6 +327,23 @@ KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1"
 read -p 'Please enter your wireless regulatory domain: ('US' for the USA) ' REGDOM
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE cfg80211.ieee80211_regdom=$REGDOM"
 unset REGDOM
+
+## Set up TRNG
+echo ':: Set up TRNG...'
+apt install -y infnoise
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE random.trust_cpu=off" ## Should not use RDSEED/RDRAND when you have a trusted TRNG.
+## The one shipped with Debian as of 2025-06-12 (0.3.3) is missing a critical patch that tells that CPU to reseed. Without this, the extra entropy is mostly wasted.
+apt install -y libftdi-dev
+cd /usr/local/src
+git clone https://github.com/leetronics/infnoise.git
+cd infnoise/software
+make -f Makefile.linux
+make -f Makefile.linux install
+systemctl disable infnoise
+systemctl enable infnoise
+sed -i 's|^ExecStart=.*|ExecStart=/usr/local/sbin/infnoise --daemon --pidfile=/var/run/infnoise.pid --dev-random --feed-frequency=30 --reseed-crng|' my-service.service ## The latest code does not utilize all of the arguments needed to properly utilize the TRNG with modern Linux kernels, so we have to write it out ourselves.
+systemctl daemon-reload
+systemctl start infnoise
 
 ## Disable various compressions to save CPU (ZFS does compression for us extremely cheaply, and space is very plentiful on the OS drives.)
 echo ':: Avoiding double-compression...'
