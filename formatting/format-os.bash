@@ -98,7 +98,7 @@ zpool import -d /dev/disk/by-id "$ENV_POOL_NAME_OS"
 zfs load-key "$ENV_POOL_NAME_OS"
 
 ## Create datasets
-bash ./datasets/zfs-create-os-datasets.bash
+bash ./datasets/create-datasets-for-os.bash
 
 ## Done
 zfs snapshot "${ENV_POOL_NAME_OS}@initial"
