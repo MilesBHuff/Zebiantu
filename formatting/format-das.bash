@@ -35,7 +35,7 @@ if [[
     -z "$ENV_ZPOOL_ATIME" ||\
     -z "$ENV_ZPOOL_CASESENSITIVITY" ||\
     -z "$ENV_ZPOOL_CHECKSUM" ||\
-    -z "$ENV_ZPOOL_COMPRESSION_BALANCED" ||\
+    -z "$ENV_ZPOOL_COMPRESSION_MOST" ||\
     -z "$ENV_ZPOOL_ENCRYPTION" ||\
     -z "$ENV_ZPOOL_NORMALIZATION"
 ]]; then
@@ -52,7 +52,17 @@ if [[ -z $ASHIFT ]]; then
    exit 4
 fi
 
-## Create pool
+echo ':: Unmounting and exporting old pool...'
+zpool export -f "$ENV_POOL_NAME_DAS"
+
+echo ':: Clearing out old filesystems...'
+echo '(This is necessary to avoid issues on import later.)'
+for DEVICE in "$@"; do
+    zpool labelclear -f "$DEVICE"
+    wipefs -a "$DEVICE"
+done
+
+echo ':: Creating the pool...'
 set -e
 zpool create -f \
     -o ashift="$ASHIFT" \
@@ -81,7 +91,7 @@ zpool create -f \
     -O keyformat=passphrase \
     -O keylocation="file:///etc/zfs/keys/$ENV_POOL_NAME_DAS.key" \
     \
-    -O compression="$ENV_ZPOOL_COMPRESSION_BALANCED" \
+    -O compression="$ENV_ZPOOL_COMPRESSION_MOST" \
     \
     -O canmount=on \
     -O mountpoint="$ENV_ZFS_ROOT/$ENV_POOL_NAME_DAS" \
@@ -89,17 +99,21 @@ zpool create -f \
     "$ENV_POOL_NAME_DAS" \
     $MIRROR "$@"
 
-## First import
-zpool export "$ENV_POOL_NAME_DAS"
+echo ':: Importing...'
+zpool export -f "$ENV_POOL_NAME_DAS"
 zpool import -d /dev/disk/by-id "$ENV_POOL_NAME_DAS"
 zfs load-key "$ENV_POOL_NAME_DAS"
+zfs mount "$ENV_POOL_NAME_DAS"
 
-## Configure partitions
-for DEVICE in "${@[@]}"; do
+echo ':: Adjusting partition metadata...'
+for DEVICE in "$@"; do
     sgdisk --change-name=1:"$ENV_NAME_VDEV" "$DEVICE" ## For consistency with the non-whole-disk partition labels.
     sgdisk --change-name=9:"$ENV_NAME_RESERVED" "$DEVICE" ## Empty by default
-do
+done
+partprobe
 
-## Done
+echo ':: Creating first snapshot...'
 zfs snapshot "${ENV_POOL_NAME_DAS}@initial"
+
+echo ':: Done.'
 exit 0
