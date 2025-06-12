@@ -226,23 +226,49 @@ alias dev wwn-*
 EOF
 echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
 
-## Enable hidden mount options
-#NOTE: ZFS does not provide properties for all of the mount options it supports. One such mount option is `lazytime`. So we have to use some kind of hook to automatically remount all zfs mounts with `lazytime` if we want to use it automatically.
-FILE=/etc/zfs/zed.d/mount-lazytime.sh
-cat > "$FILE" <<'EOF'
+## Enforce mount options
+## ZFS does not provide properties for all of the mount options it supports. One such mount option is `lazytime`. So we have to use some kind of hook to remount all zfs mounts with `lazytime` if we want to use it automatically.
+## A lot of filesystems explicitly declare `relatime` when nothing in them actually uses atimes.
+## The default mount options include `relatime` and lack `lazytime`, which is bad for performance and longevity.
+BASENAME=remount-options
+SCRIPT="/usr/local/sbin/.$BASENAME"
+cat > "/etc/systemd/system/$BASENAME.service" <<EOD
+[Unit]
+Description=Ensure all mounts are given sensible mount options.
+[Service]
+Type=oneshot
+ExecStart="$SCRIPT"
+EOD
+cat > "/etc/systemd/system/$BASENAME.path" <<EOD
+[Unit]
+Description=Watch for mount table changes
+[Path]
+PathChanged=/proc/self/mounts
+Unit="$BASENAME.service"
+[Install]
+WantedBy=multi-user.target
+EOD
+cat > "$SCRIPT" <<'EOF'
 #!/bin/sh
-## Triggered by ZED when a filesystem is mounted.
-[ "$ZEVENT_TYPE" != 'mount' ] && exit 0
-# OPTS=$(grep " $ZEVENT_PAYLOAD_MOUNTPOINT " /proc/self/mounts | cut -d ' ' -f4)
-OPTS=$(awk -v mountpoint="$ZEVENT_PAYLOAD_MOUNTPOINT" '$2 == mountpoint { print $4 }' /proc/self/mounts)
-case ",$OPTS," in
-    *,lazytime,*) ;;
-    *) mount -o remount,lazytime "$ZEVENT_PAYLOAD_MOUNTPOINT" ;;
-esac
+awk '{ print $2 $4 }' /proc/self/mounts | while read -r MOUNT_PATH MOUNT_OPTS; do
+    REMOUNT_OPTS=''
+    case ",$MOUNT_OPTS," in
+        *,lazytime,*|*,sync,*|*,ro,*) ;; #FIXME: There is probably no point in enabling `lazytime` on RAM-based filesystems.
+        *) REMOUNT_OPTS="$REMOUNT_OPTS,lazytime" ;;
+    esac
+    case ",$MOUNT_OPTS," in
+        # *,noatime,*|*,relatime,*|*,atime,*) ;;
+        *,noatime,*|*,atime,*) ;; ## A lot of filesystems are explicitly mounted with relatime for no reason, and accordingly need to be overridden -- This means that filesystems that *do* need atimes have to set `atime`, not `relatime`...
+        *) REMOUNT_OPTS="$REMOUNT_OPTS,noatime" ;;
+    esac
+    if [ -n "$REMOUNT_OPTS" ]; then
+        mount -o "remount$REMOUNT_OPTS" "$MOUNT_PATH"
+    fi
+done
 exit 0
 EOF
-chmod 0755 "$FILE"
-unset FILE
+chmod 0755 "$SCRIPT"
+unset SCRIPT BASENAME
 
 ## Enable swap
 echo ':: Configuring swap...'
