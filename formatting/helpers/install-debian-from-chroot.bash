@@ -3,6 +3,7 @@
 ## Also thanks to ChatGPT (not for code, but for helping with some installataion steps)
 
 ## Get environment
+CWD=$(pwd)
 ENV_FILE='../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source ../env.sh
@@ -79,6 +80,7 @@ passwd
 for FILE in $(ls -A /etc/skel); do cp "$FILE" /root/; done
 read -p "Please enter a username for your personal user: " USERNAME
 adduser "$USERNAME"
+unset USERNAME
 
 ## Get our packages up-to-date
 echo ':: Updating...'
@@ -124,9 +126,9 @@ apt install -y dosfstools mdadm
 # systemctl enable mdadm-raid
 read -p 'Run this command outside of chroot and paste the result: `$(lsblk -o uuid "/dev/md/$ENV_NAME_ESP" | tail -n 1)` ' ESP_UUID
 echo "UUID=$ESP_UUID /boot/esp vfat noatime,lazytime,nofail,x-systemd.device-timeout=5s,iocharset=utf8,umask=0022,fmask=0133,dmask=0022 0 0" > '/etc/fstab' #FIXME: `sync` causes writes to never finish?
+unset ESP_UUID
 mount /boot/esp
 apt install -y git
-CWD=$(pwd)
 cd /usr/local/src
 git clone 'https://github.com/zbm-dev/zfsbootmenu'
 cd zfsbootmenu
@@ -146,8 +148,8 @@ Global:
 # InitCPIOFlags: []
   PreHooksDir: /etc/zfsbootmenu/generate-zbm.pre.d
   PostHooksDir: /etc/zfsbootmenu/generate-zbm.post.d
-#Kernel:
-# CommandLine: ''
+Kernel:
+  CommandLine: ro quiet loglevel=5 init_on_alloc=0
 # Path: ''
 # Version: ''
 # Prefix: ''
@@ -162,8 +164,6 @@ EFI:
 # Stub: /usr/lib/systemd/boot/efi/linuxx64.efi.stub
 # SplashImage: /etc/zfsbootmenu/splash.bmp
 # DeviceTree: ''
-Kernel:
-  CommandLine: ro quiet loglevel=5
 EOF
 cat > /etc/zfsbootmenu/generate-zbm.post.d/99-portablize.sh <<'EOF'
 #!/bin/sh
@@ -177,9 +177,9 @@ cp -fa "$SRC" "$DEST.new"
 mv -f "$DEST.new" "$DEST"
 EOF
 chmod +x /etc/zfsbootmenu/generate-zbm.post.d/99-portablize.sh
-read -p "Don't let kexec-tools handle reboots by default; it is an unsupported scenario and results in a series of bugs. If you ever want to kexec into a small point-release kernel, explicitly request it. " FOO
+read -p "Don't let kexec-tools handle reboots by default; it is an unsupported scenario and results in a series of bugs. If you ever want to kexec into a small point-release kernel, explicitly request it. " FOO; unset FOO
 apt install -y bsdextrautils curl dracut-core efibootmgr fzf kexec-tools libsort-versions-perl libboolean-perl libyaml-pp-perl mbuffer systemd-boot-efi
-apt-mark auto bsdextrautils dracut-core fzf libboolean-perl libsort-versions-perl libyaml-pp-perl mbuffer
+# apt-mark auto bsdextrautils dracut-core fzf libboolean-perl libsort-versions-perl libyaml-pp-perl mbuffer
 make core dracut
 generate-zbm
 cd "$CWD"
@@ -194,11 +194,12 @@ KEYDIR=/etc/zfs/keys
 chmod 700 "$KEYDIR"
 KEYFILE="$KEYDIR/$ENV_POOL_NAME_OS.key"
 touch "$KEYFILE"
-read -p "A file is about to open; enter your ZFS encryption password into it. This is necessary to prevent double-prompting during boot. Press 'Enter' to continue. " FOO
+read -p "A file is about to open; enter your ZFS encryption password into it. This is necessary to prevent double-prompting during boot. Press 'Enter' to continue. " FOO; unset FOO
 nano "$KEYFILE"
 zfs set keylocation=file://"$KEYFILE" "$ENV_POOL_NAME_OS"
 echo 'UMASK=0077' > /etc/initramfs-tools/conf.d/umask.conf
 echo "FILES=\"$KEYDIR/*\"" > /etc/initramfs-tools/conf.d/99-zfs-keys.conf
+unset KEYDIR KEYFILE
 
 ## Prettify zpool display
 cat > /etc/zfs/vdev_id.conf <<EOF
@@ -218,10 +219,10 @@ alias ssd ata-OCZSSD*
 alias ssd ata-SSD*
 
 ## Other
-alias mdm ata-md*
-alias nvm ata-nvme*
-alias usb ata-usb*
-alias dev ata-wwn*
+alias mdm md-*
+alias nvm nvme-*
+alias usb usb-*
+alias dev wwn-*
 EOF
 echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
 
@@ -278,6 +279,7 @@ KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE apparmor=1 security=apparmor"
 echo ':: Installing daemons...'
 ## Generally useful
 apt install -y chrony clamav clamav-daemon systemd-oomd
+systemctl enable chrony
 systemctl enable clamav-daemon
 systemctl enable clamav-freshclam
 ## Niche
@@ -301,6 +303,8 @@ apt install -y cpufrequtils i2c-tools ethtool fancontrol lm-sensors lshw net-too
 systemctl enable rng-tools-debian
 ## Specific firmware
 apt install -y amd64-microcode firmware-amd-graphics firmware-mellanox firmware-realtek
+## Specific drivers
+# apt install -y
 ## Specific tools
 apt install -y ipmitool mstflint openseachest
 ## Proprietary tools
@@ -315,13 +319,14 @@ apt install -y popularity-contest
 ## Common applications
 apt install -y cups rsync unzip
 ## Niche applications
-apt install -y sanoid
+# apt install -y # sanoid
 
 ## More configuration
 echo ':: Additional configurations...'
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1"
 read -p 'Please enter your wireless regulatory domain: ('US' for the USA) ' REGDOM
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE cfg80211.ieee80211_regdom=$REGDOM"
+unset REGDOM
 
 ## Disable various compressions to save CPU (ZFS does compression for us extremely cheaply, and space is very plentiful on the OS drives.)
 echo ':: Avoiding double-compression...'
@@ -334,12 +339,14 @@ for FILE in /etc/logrotate.conf /etc/logrotate.d/*; do
         mv "$FILE.new" "$FILE"
     fi
 done
+unset FILE
 
 ## Reconfigure FSH
 echo ':: Modifying filesystem hierarchy...'
 bash ../configure-filesystem-hierarchy.bash
 
 # ## Better bitmap font
+# #FIXME: It doesn't handle box-drawing characters, and it could be made to handle Powerline characters.
 # echo ':: Installing better bitmap font...'
 # FILE='/etc/default/console-setup'
 # cd /tmp
@@ -357,24 +364,26 @@ bash ../configure-filesystem-hierarchy.bash
 # ln -s * /usr/share/kbd/consolefonts/
 # cat "$FILE" | sed -r 's/^(FONTFACE)=".*/\1="TamzenBold"/' | sed -ir 's/^# (FONTSIZE)=.*/\1="8x16/' '/etc/initramfs-tools/initramfs.conf' > "$FILE.new"
 # cd "$CWD"
+# unset FILE
 
 ## Set kernel commandline
 echo ':: Setting kernel commandline...'
 KERNEL_COMMANDLINE_DIR='/etc/zfsbootmenu/commandline'
 mkdir -p "$KERNEL_COMMANDLINE_DIR"
 echo "$KERNEL_COMMANDLINE" > "$KERNEL_COMMANDLINE_DIR/commandline.txt"
-cat > "$KERNEL_COMMANDLINE_DIR/set-commandline" <<'EOF'
-#!/bin/sh
-DS=os-pool/OS/debian
-COMMANDLINE="$(cat /etc/zfsbootmenu/commandline/commandline.txt | xargs)"
-zfs set org.zfsbootmenu:commandline="$COMMANDLINE" "$DS"
-zfs get org.zfsbootmenu:commandline "$DS"
+echo '#!/bin/sh' > "$KERNEL_COMMANDLINE_DIR/set-commandline"
+echo 'BOOTFS=$(zpool get -Ho value bootfs '"$ENV_POOL_NAME_OS"')' > "$KERNEL_COMMANDLINE_DIR/set-commandline"
+cat >> "$KERNEL_COMMANDLINE_DIR/set-commandline" <<'EOF'
+COMMANDLINE="$(cat /etc/zfsbootmenu/commandline/commandline.txt | xargs | tr ' ' '\n' | sort -V | uniq | tr '\n' ' ' && echo)"
+zfs set org.zfsbootmenu:commandline="$COMMANDLINE" "$BOOTFS"
+zfs get org.zfsbootmenu:commandline "$BOOTFS"
 EOF
+unset KERNEL_COMMANDLINE_DIR
 update-initramfs -u
 
 ## Wrap up
 echo ':: Wrapping up...'
-zfs snapshot -r os-pool@install-debian
+zfs snapshot -r $ENV_POOL_NAME_OS@install-debian
 
 ## Done
 exit 0
