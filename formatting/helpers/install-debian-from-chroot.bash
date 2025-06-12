@@ -227,30 +227,42 @@ EOF
 echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
 
 ## Enforce mount options
-## ZFS does not provide properties for all of the mount options it supports. One such mount option is `lazytime`. So we have to use some kind of hook to remount all zfs mounts with `lazytime` if we want to use it automatically.
-## A lot of filesystems explicitly declare `relatime` when nothing in them actually uses atimes.
+## ZFS does not provide properties for all of the mount options it supports. One such mount option is `lazytime`. So we have to specify it manually when mounting datasets.
 ## The default mount options include `relatime` and lack `lazytime`, which is bad for performance and longevity.
+## A lot of system mounts explicitly declare `relatime` when nothing in them actually uses atimes.
 BASENAME=remount-options
 SCRIPT="/usr/local/sbin/.$BASENAME"
-cat > "/etc/systemd/system/$BASENAME.service" <<EOD
+
+SERVICE="/etc/systemd/system/$BASENAME-normal.service"
+cat > "$SERVICE" <<EOD
 [Unit]
-Description=Ensure all mounts are given sensible mount options.
+Description=Retroactively apply mount options to all non-zfs mounts.
+After=local-fs.target
+Requires=local-fs.target
 [Service]
 Type=oneshot
-ExecStart="$SCRIPT"
+ExecStart=$SCRIPT mount
 EOD
-cat > "/etc/systemd/system/$BASENAME.path" <<EOD
+systemctl enable "$SERVICE"
+
+SERVICE="/etc/systemd/system/$BASENAME-zfs.service"
+cat > "$SERVICE" <<EOD
 [Unit]
-Description=Watch for mount table changes
-[Path]
-PathChanged=/proc/self/mounts
-Unit="$BASENAME.service"
-[Install]
-WantedBy=multi-user.target
+Description=Retroactively apply mount options to all zfs mounts.
+After=zfs-mount.service
+Requires=zfs-mount.service
+[Service]
+Type=oneshot
+ExecStart=$SCRIPT zfs
 EOD
+systemctl enable "$SERVICE"
+
 cat > "$SCRIPT" <<'EOF'
 #!/bin/sh
-awk '{ print $2 $4 }' /proc/self/mounts | while read -r MOUNT_PATH MOUNT_OPTS; do
+AWK_SCRIPT='{ print $2, $4 }'
+[ "$1" = 'mount' ] && AWK_SCRIPT='$3!="zfs" '"$AWK_SCRIPT" ||\
+[ "$1" = 'zfs'   ] && AWK_SCRIPT='$3=="zfs" '"$AWK_SCRIPT"
+awk "$AWK_SCRIPT" /proc/self/mounts | while read -r MOUNT_PATH MOUNT_OPTS; do
     REMOUNT_OPTS=''
     case ",$MOUNT_OPTS," in
         *,lazytime,*|*,sync,*|*,ro,*) ;; #FIXME: There is probably no point in enabling `lazytime` on RAM-based filesystems.
@@ -268,7 +280,24 @@ done
 exit 0
 EOF
 chmod 0755 "$SCRIPT"
-unset SCRIPT BASENAME
+
+SCRIPT=/usr/local/sbin/mount
+cat > "$SCRIPT" <<'EOF'
+#!/bin/sh
+exec /usr/bin/mount -o noatime,lazytime "$@"
+EOF
+chmod 0755 "$SCRIPT"
+
+SCRIPT=/usr/local/sbin/zfs
+cat > "$SCRIPT" <<'EOF'
+#!/bin/sh
+[ "$1" != mount ] && exec /usr/sbin/zfs "$@"
+shift
+exec /usr/sbin/zfs mount -o lazytime "$@"
+EOF
+chmod 0755 "$SCRIPT"
+
+unset BASENAME SCRIPT SERVICE
 
 ## Enable swap
 echo ':: Configuring swap...'
