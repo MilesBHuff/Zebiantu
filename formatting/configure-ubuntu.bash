@@ -44,21 +44,19 @@ systemctl disable systemd-networkd
 systemctl mask systemd-networkd
 apt purge systemd-networkd
 
+echo ':: Disabling Wi-Fi...'
+nmcli radio wifi off
+nmcli general reload
+
 ################################################################################
 #NOTE: Keep the below snippets synchronized with `install-debian-from-chroot.bash`.
 
 declare -a KERNEL_PARAMS=()
 
-echo ':: Disabling Wi-Fi...'
-nmcli radio wifi off
-nmcli general reload
-cat > /etc/modprobe.d/blacklist-wifi.conf <<'EOF'
-blacklist iwlwifi
-EOF
-
 echo ':: Configuring Wake-On-LAN...'
 cat > /etc/udev/rules.d/99-wol.rules <<'EOF'
 ACTION=="add", SUBSYSTEM=="net", KERNEL=="en*", RUN+="/usr/sbin/ethtool -s %k wol g"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*", RUN+="/usr/sbin/ethtool -s %k wol g"
 EOF
 
 echo ':: Configuring swap...'

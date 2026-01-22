@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+## This is a one-shot script that finishes setting up Debian in a chroot.
 ## Special thanks to https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Bookworm%20Root%20on%20ZFS.html
 ## Also thanks to ChatGPT (not for code, but for helping with some installataion steps)
 set -euo pipefail
@@ -38,19 +39,15 @@ echo "127.0.1.1 $HOSTNAME" >> '/etc/hosts'
 echo ':: Configuring network...'
 ip addr show
 read -p "Copy the interface name you want to use, and paste it here; then press 'Enter': " INTERFACE_NAME
-cat > "/etc/network/interfaces.d/$INTERFACE_NAME" <<EOF
+cat > "/etc/network/interfaces.d/$INTERFACE_NAME.conf" <<EOF
 auto $INTERFACE_NAME
 iface $INTERFACE_NAME inet dhcp
-EOF
-
-echo ':: Disabling Wi-Fi...'
-cat > /etc/modprobe.d/blacklist-wifi.conf <<'EOF'
-blacklist iwlwifi
 EOF
 
 echo ':: Configuring Wake-On-LAN...'
 cat > /etc/udev/rules.d/99-wol.rules <<'EOF'
 ACTION=="add", SUBSYSTEM=="net", KERNEL=="en*", RUN+="/usr/sbin/ethtool -s %k wol g"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*", RUN+="/usr/sbin/ethtool -s %k wol g"
 EOF
 
 ## Configure apt
@@ -104,6 +101,9 @@ apt full-upgrade -y
 apt install -y unattended-upgrades
 dpkg-reconfigure -plow unattended-upgrades
 
+## Install build tools
+apt install -y build-essential pkg-config
+
 ## Install Linux
 echo ':: Installing Linux...'
 apt install -y -t bookworm-backports linux-image-amd64 linux-headers-amd64 dkms
@@ -113,21 +113,12 @@ echo ':: Installing LZ4...'
 apt install -y lz4
 echo lz4 >> /etc/initramfs-tools/modules
 
-## Compile zstd and lz4
-## (The latest versions of these are critical to the system and have huge performance gains, yet Debian doesn't ship them.)
-## Debian forces you to pull in over 50 packages from testing just to update from one bugfix point-release to another in zstd, which is ABSOLUTELY asinine.
-## We have to compile them from source, or manually install a dpkg.
-echo ':: Getting latest compression algorithms...'
-#TODO: LZ4 9.10.0
-#TODO: ZSTD 1.5.7
-sudo apt install -y zlib1g-dev liblzma-dev liblz4-dev #NOTE: Only needed if compiling from source.
-
 ## Install and configure ZFS
 echo ':: Installing ZFS...'
 apt install -y -t bookworm-backports zfsutils-linux zfs-dkms
 # echo 'REMAKE_INITRD=yes' >> '/etc/dkms/zfs.conf' #NOTE: Needed on ZFS < 2.2, deprecated on ZFS >= 2.2
 mkdir -p '/etc/zfs/zfs-list.cache'
-touch '/etc/zfs/zfs-list.cache/os-pool'
+touch "/etc/zfs/zfs-list.cache/$ENV_POOL_NAME_OS"
 # zed -F
 sed -Ei "s|$TARGET/?|/|" '/etc/zfs/zfs-list.cache/'*
 systemctl enable zfs.target
@@ -210,6 +201,7 @@ KEYDIR=/etc/zfs/keys
 chmod 700 "$KEYDIR"
 KEYFILE="$KEYDIR/$ENV_POOL_NAME_OS.key"
 touch "$KEYFILE"
+chmod 600 "$KEYFILE"
 read -p "A file is about to open; enter your ZFS encryption password into it. This is necessary to prevent double-prompting during boot. Press 'Enter' to continue. " FOO; unset FOO
 nano "$KEYFILE"
 zfs set keylocation=file://"$KEYFILE" "$ENV_POOL_NAME_OS"
@@ -430,7 +422,9 @@ unset REGDOM
 
 ## Set up TRNG
 echo ':: Set up TRNG...'
+#NOTE: This installs Debian's official version in order to pull in dependencies, and then overrides it with a locally-compiled version.
 apt install -y infnoise
+systemctl disable infnoise
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE random.trust_cpu=off" ## Should not use RDSEED/RDRAND when you have a trusted TRNG.
 ## The one shipped with Debian as of 2025-06-12 (0.3.3) is missing a critical patch that tells that CPU to reseed. Without this, the extra entropy is mostly wasted.
 apt install -y libftdi-dev
@@ -439,9 +433,8 @@ git clone https://github.com/leetronics/infnoise.git
 cd infnoise/software
 make -f Makefile.linux
 make -f Makefile.linux install
-systemctl disable infnoise
 systemctl enable infnoise
-sed -i 's|^ExecStart=.*|ExecStart=/usr/local/sbin/infnoise --daemon --pidfile=/var/run/infnoise.pid --dev-random --feed-frequency=30 --reseed-crng|' my-service.service ## The latest code does not utilize all of the arguments needed to properly utilize the TRNG with modern Linux kernels, so we have to write it out ourselves.
+sed -i 's|^ExecStart=.*|ExecStart=/usr/local/sbin/infnoise --daemon --pidfile=/var/run/infnoise.pid --dev-random --feed-frequency=30 --reseed-crng|' /etc/systemd/system/infnoise.service ## The latest code does not utilize all of the arguments needed to properly utilize the TRNG with modern Linux kernels, so we have to write it out ourselves.
 systemctl daemon-reload
 systemctl start infnoise
 
@@ -500,7 +493,7 @@ update-initramfs -u
 
 ## Wrap up
 echo ':: Creating snapshot...'
-zfs snapshot -r $ENV_POOL_NAME_OS@install-debian
+zfs snapshot -r "$ENV_POOL_NAME_OS@install-debian"
 
 ## Done
 echo ':: Done.'

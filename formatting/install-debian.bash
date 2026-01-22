@@ -2,10 +2,12 @@
 function helptext {
     echo "Usage: install-debian.bash"
     echo
-    echo 'This script installs debian to the target directory.'
+    echo 'This script installs Debian to the target directory.'
+    echo 'It assumes you are running it from a Debian LiveCD that is connected to the Internet.'
 }
 ## Special thanks to https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Bookworm%20Root%20on%20ZFS.html
 ## Also thanks to ChatGPT (not for code, but for helping with some installataion steps)
+set -euo pipefail
 
 ## Get environment
 ENV_FILE='../env.sh'
@@ -23,11 +25,14 @@ if [[
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
 fi
-set -e
 
 ## Set variables
 echo ':: Setting variables...'
 export TARGET="$ENV_ZFS_ROOT/$ENV_POOL_NAME_OS"
+if [[ ! -d "$TARGET" ]]; then
+    echo "ERROR: Target '$TARGET' not mounted!" >&2
+    exit 4
+fi
 CWD=$(pwd)
 cd "$TARGET"
 
@@ -46,17 +51,19 @@ debootstrap bookworm "$TARGET"
 
 ## Bring over ZFS imports
 echo ':: Bringing over ZFS imports...'
-mkdir -p etc/zfs
-set +e
-cp /etc/zfs/zpool.cache etc/zfs
-cp "/etc/zfs/keys/$ENV_POOL_NAME_OS.key" "etc/zfs/keys/$ENV_POOL_NAME_OS.key"
-set -e
+mkdir -p etc/zfs/keys
+declare -a ZFILES=('etc/zfs/zpool.cache' "etc/zfs/keys/$ENV_POOL_NAME_OS.key")
+for ZFILE in "${ZFILES[@]}"; do
+    [[ -e "/$ZFILE" ]] && cp "/$ZFILE" "$ZFILE" || echo "WARN: '/$ZFILE' does not exist!" >&2
+done
+unset ZFILES
 cp /etc/hostid etc/hostid ## ZFS keeps track of the host that imported it in its cachefile, so we need to keep the same hostid as the LiveCD.
 
 ## Bind-mount system directories for chroot
 echo ':: Bindmounting directories for chroot...'
 declare -a BIND_DIRS=(dev proc sys)
 for BIND_DIR in "${BIND_DIRS[@]}"; do
+    mkdir -p "$BIND_DIR"
     mount --make-private --rbind "/$BIND_DIR" "$BIND_DIR"
 done
 SCRIPTS_DIR='media/scripts'
