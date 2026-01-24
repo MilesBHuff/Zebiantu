@@ -89,7 +89,7 @@ export ENV_ZPOOL_COMPATIBILITY='openzfs-2.2-linux' ## Highest version supported 
 export ENV_ZPOOL_NORMALIZATION='formD' ## Most-performant option that unifies pre-composed letters and letters with combining diacritics. Downside is that it implies that all filenames are UTF-8; best to not use this setting for legacy pools, or for pools that an OS runs on.
 export ENV_ZPOOL_CASESENSITIVITY='sensitive' ## Best for strictness.
 
-export ENV_ZPOOL_ATIME='off' ## Terrible for performance, and *might* cause data duplication on snapshotting (it definitely does in btrfs) — `atime` is fwiu generally incompatible with CoW+snapshotting.
+export ENV_ZPOOL_ATIME='off' ## Terrible for performance, and *might* cause data duplication on snapshotting (it definitely does in btrfs). Simply put: `atime` is, fwiu, more-or-less incompatible with CoW+snapshotting.
 
 export ENV_ZPOOL_ENCRYPTION='aes-128-gcm' ## GCM is better performance than CCM. 128 is faster than 256 and I see no evidence that it will ever be possible for classical or quantum computing to be able to realistically or affordably ever break it in my lifetime.
 export ENV_ZPOOL_PBKDF2ITERS='999999' ## Run `cryptsetup benchmark` and divide PBKDF2-sha256 by 10 or less to get this number. This makes it take 125ms to unlock this pool on your current computer, and annoys the heck out of attackers.
