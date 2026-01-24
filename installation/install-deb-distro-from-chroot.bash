@@ -285,10 +285,9 @@ EOF
 echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
 
 ## Enforce mount options
-## ZFS does not provide properties for all of the mount options it supports. One such mount option is `lazytime`. So we have to specify it manually when mounting datasets.
-## The default mount options include `relatime` and lack `lazytime`, which is bad for performance and longevity.
-## A lot of system mounts explicitly declare `relatime` when nothing in them actually uses atimes.
-## Unfortunately, the only way to address some of these right now is via monkeypatching. C'est la vie.
+## ZFS does not provide properties for all of the mount options it supports (like `lazytime`), so we have to specify it manually when mounting datasets or monkeypatch `zfs` to do it by default.
+## Linux's default mount options include `relatime` and lack `lazytime`, which is suboptimal for performance and longevity. The only way to change the defaults is to monkeypatch `mount`.
+## A lot of system mounts explicitly declare `relatime` when nothing in them actually uses atimes. These need manual correction.
 BASENAME=remount-options
 SCRIPT="/usr/local/sbin/.$BASENAME"
 
