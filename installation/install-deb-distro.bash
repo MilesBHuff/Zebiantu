@@ -37,7 +37,7 @@ fi
 CWD=$(pwd)
 cd "$TARGET"
 export UBUNTU_VERSION='noble' #TODO: Change once Resolute Racoon (26.04) comes out.
-export DEBIAN_VERSION='bookworm'
+export DEBIAN_VERSION='trixie'
 
 ## Mount tmpfs dirs
 echo ':: Mounting tmpfs dirs...'

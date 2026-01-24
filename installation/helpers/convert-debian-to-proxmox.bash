@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
-## This is a one-shot script that finishes setting up Artemis (using Debian) in a chroot.
+function helptext {
+    echo "Usage: convert-debian-to-proxmox.bash"
+    echo
+    echo 'This is a one-shot script that converts Debian into Proxmox.'
+    echo 'Luckily for me, someone else already went through the trouble of making this, so this script just calls theirs.'
+}
+## Instructions: https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_13_Trixie
 set -euo pipefail
 
-#TODO
-echo 'TODO' >&2
-exit 1
+SCRIPT=$(mktemp)
+curl -O https://raw.githubusercontent.com/MrMasterbay/proxmox-from-scratch/main/little-goblin.sh "$SCRIPT"
+chmod +x "$SCRIPT"
+exec "$SCRIPT"
+# source "$SCRIPT"
+# rm "$SCRIPT"
+# unset SCRIPT
