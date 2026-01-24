@@ -32,4 +32,4 @@ Scripts that test some functionality.
 
 ## License
 
-Copyright © 2024–2026 by Miles Bradley Huff per the terms of the General Public License (v3.0 or later)
+Copyright © 2025–2026 Miles Bradley Huff per the terms of the General Public License (v3.0 or later)
