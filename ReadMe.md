@@ -1,9 +1,11 @@
-# Miles's NAS Configs & Scripts
+# Miles's Homelab Configs & Scripts
 
-This repo contains scripts, configurations, etc that pertain to my NAS.
+This repo contains scripts, configurations, etc that pertain to my homelab.
 
-## Formatting
+## Partformatition
 
-This directory contains scripts that will yield you a ZFS pool with optimized settings, an HDD mirror for most of your data, and an SSD for SLOG + SVDEV (metadata / small files). This will get you optimal performance and longevity for minimal hardware.
+This directory contains scripts that generate an optimized ZFS pool containing an HDD mirror for bulk data and an SSD mirror for SLOG + SVDEV (metadata / small files), the goal being maximum performance and longevity for relatively minimal hardware.
 
-(Ideally, the OS would also go onto the SSD mirror, to take advantage of its redundancy and further-decrease the amount of hardware required by the system; but TrueNAS does not support installation to a partition.)
+## Installation
+
+This directory contains scripts that install operating systems to a ZFS root. These scripts are capable of handling Debian and Ubuntu, and use ZFSBootMenu to permit booting directly to an encrypted ZFS.
