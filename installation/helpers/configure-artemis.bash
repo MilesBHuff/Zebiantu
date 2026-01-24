@@ -36,11 +36,10 @@ apt install -y -t "$DEBIAN_VERSION-backports" openrgb
 
 ## Set up TRNG
 echo ':: Set up TRNG...'
-#NOTE: This installs Debian's official version in order to pull in dependencies, and then overrides it with a locally-compiled version.
+#NOTE: This installs Debian's official version in order to pull in dependencies, and then overrides it with a locally-compiled version. (The one shipped with Debian as of 2025-06-12 (0.3.3) is missing a critical patch that tells that CPU to reseed. Without this, the extra entropy is mostly wasted.)
 apt install -y infnoise
 systemctl disable infnoise
 # KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE random.trust_cpu=off" ## No need to use RDSEED/RDRAND when you have a trusted TRNG, with the exception of at early boot; then again, early boot is the only time this matters and the only time this TRNG isn't used, so... probably best to leave enabled.
-## The one shipped with Debian as of 2025-06-12 (0.3.3) is missing a critical patch that tells that CPU to reseed. Without this, the extra entropy is mostly wasted.
 apt install -y libftdi-dev
 cd /usr/local/src
 REPO='infnoise'
