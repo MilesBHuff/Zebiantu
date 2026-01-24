@@ -10,7 +10,9 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
 
 ### Partformatition
 
-Scripts that generate an optimized ZFS pool containing an HDD mirror for bulk data and an SSD mirror for SLOG + SVDEV (metadata / small files).
+Scripts that generate either of the following:
+* a ZFS pool containing an HDD mirror for bulk data and an SSD mirror for SLOG + SVDEV (metadata / small files).
+* a ZFS pool containing an SSD mirror for an operating system, and an mdadm RAID1 containing an ESP.
 
 ### Settings
 
