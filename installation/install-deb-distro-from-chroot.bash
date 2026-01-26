@@ -400,13 +400,13 @@ awk "$AWK_SCRIPT" /proc/self/mounts | while read -r MOUNT_PATH MOUNT_OPTS; do
     fi
 done
 exit 0
-EOF; chmod 0755 "$SCRIPT"
+EOF; chmod +x "$SCRIPT"
 
 SCRIPT=/usr/local/sbin/mount
 cat > "$SCRIPT" <<'EOF'
 #!/bin/sh
 exec /usr/bin/mount -o noatime,lazytime "$@"
-EOF; chmod 0755 "$SCRIPT"
+EOF; chmod +x "$SCRIPT"
 ## Note to code reviewers: `-o` can be passed multiple times, and later values override prior ones.
 
 SCRIPT=/usr/local/sbin/zfs
@@ -415,7 +415,7 @@ cat > "$SCRIPT" <<'EOF'
 [ "$1" != mount ] && exec /usr/sbin/zfs "$@"
 shift
 exec /usr/sbin/zfs mount -o lazytime "$@"
-EOF; chmod 0755 "$SCRIPT"
+EOF; chmod +x "$SCRIPT"
 
 unset BASENAME SCRIPT SERVICE
 
