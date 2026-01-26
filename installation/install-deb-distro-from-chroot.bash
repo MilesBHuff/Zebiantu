@@ -249,7 +249,7 @@ swap-priority = 32767
 # mount-point = /foo
 EOF
 systemctl daemon-reload
-systemctl start systemd-zram-setup@zram0
+# systemctl start systemd-zram-setup@zram0 ## Shouldn't start/stop from chroot.
 #TODO: Configure swappiness and such. (It should be higher than default, as on this system swap is much cheaper than disk, so it can be advantageous to swap anons versus dropping pages.)
 
 ## Configure `/tmp` as tmpfs

@@ -54,8 +54,8 @@ network:
   version: 2
   renderer: NetworkManager
 EOF
-systemctl stop systemd-networkd
-systemctl start NetworkManager
+# systemctl stop systemd-networkd ## Shouldn't start/stop from chroot.
+# systemctl start NetworkManager ## Shouldn't start/stop from chroot.
 netplan apply
 systemctl enable NetworkManager
 systemctl disable systemd-networkd
@@ -99,7 +99,7 @@ sysctl --system
 echo ':: Setting up Docker...'
 apt install -y docker.io
 systemctl enable docker
-systemctl start docker
+# systemctl start docker ## Shouldn't start/stop from chroot.
 usermod -aG docker "$USERNAME"
 
 echo ':: Setting up ROCm...'
