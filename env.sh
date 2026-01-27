@@ -74,6 +74,10 @@ export ENV_ENDURANCE_L2ARC=300
 ## Measured speeds in MB/s (`hdparm -t` averaged across devices)
 export ENV_SPEED_L2ARC=4470
 
+## Device-specific queue depths
+export ENV_NVME_QUEUE_REGIME='SATA' ## 'SATA'|'NVMe': Pick the one that best-describes your main pool's storage type.
+export ENV_NVME_QUEUE_DEPTH=4096
+
 ## Sizes
 
 export ENV_RECORDSIZE_ARCHIVE='16M' ## Most-efficient storage.

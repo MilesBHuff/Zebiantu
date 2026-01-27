@@ -17,6 +17,11 @@ if [[ \
     -z "$ENV_DEVICES_IN_L2ARC" ||\
     -z "$ENV_ENDURANCE_L2ARC" ||\
     -z "$ENV_MTBF_TARGET_L2ARC" ||\
+    -z "$ENV_NVME_QUEUE_DEPTH" ||\
+    -z "$ENV_NVME_QUEUE_REGIME" ||\
+    -z "$ENV_POOL_NAME_DAS" ||\
+    -z "$ENV_POOL_NAME_NAS" ||\
+    -z "$ENV_POOL_NAME_OS" ||\
     -z "$ENV_RECORDSIZE_HDD" ||\
     -z "$ENV_RECORDSIZE_SSD" ||\
     -z "$ENV_SECONDS_DATA_LOSS_ACCEPTABLE" ||\
@@ -36,58 +41,94 @@ chmod 644 "$FILE"
 #################
 ## QUEUE DEPTH ##
 #################
-## The ZFS settings here affect all devices, including NVMes; but I'm using my NVMes for L2ARC, which ZFS heavily rate-limits for longevity, so it shouldn't matter that we're limiting them to a SATA queue depth.
-## The defaults set tight per-pipe minima/maxima; I manage to accomplish the same ends with greater flexibility for lopsided loads by setting an overall limit, lower per-pipe minima, and larger per-pipe maxima.
-## To avoid bad settings, I have ensured that symmetrical load totals match those of the defaults. In order to do this, it was necessary to first understand ZFS's scheduler's algorithm.
-## Algorithm: (All loops go in order from sync_read to sync_write to async_read to async_write to scrub.) First, loop through and assign one command to each category until all minima are filled. Then, repeat until all maxima are filled or the total queue limit is hit.
+case "$ENV_NVME_QUEUE_REGIME" in
+    'SATA')
+        ## The ZFS settings here affect all devices, including NVMes; but I'm using my NVMes for L2ARC, which ZFS heavily rate-limits for longevity, so it shouldn't matter that we're limiting them to a SATA queue depth.
+        ## The defaults set tight per-pipe minima/maxima; I manage to accomplish the same ends with greater flexibility for lopsided loads by setting an overall limit, lower per-pipe minima, and larger per-pipe maxima.
+        ## To avoid bad settings, I have ensured that symmetrical load totals match those of the defaults. In order to do this, it was necessary to first understand ZFS's scheduler's algorithm.
+        ## Algorithm: (All loops go in order from sync_read to sync_write to async_read to async_write to scrub.) First, loop through and assign one command to each category until all minima are filled. Then, repeat until all maxima are filled or the total queue limit is hit.
 
-## Max queue depth (32 is the max supported by SATA)
-echo "options zfs             zfs_vdev_max_active=32" >> "$FILE" #DEFAULT: 1000 (basically uncapped)
+        ## Max queue depth (32 is the max supported by SATA)
+        echo "options zfs             zfs_vdev_max_active=32" >> "$FILE" #DEFAULT: 1000 (basically uncapped)
 
-## Min queue depths per category (I can't fault most of these, but the sync categories are much higher than they need to be to accomplish the same end per the algorithm used.)
-echo "options zfs   zfs_vdev_sync_read_min_active=5"  >> "$FILE" #DEFAULT:   10
-echo "options zfs  zfs_vdev_sync_write_min_active=5"  >> "$FILE" #DEFAULT:   10
-echo "options zfs  zfs_vdev_async_read_min_active=2"  >> "$FILE" #DEFAULT:    2
-echo "options zfs zfs_vdev_async_write_min_active=1"  >> "$FILE" #DEFAULT:    1
-echo "options zfs       zfs_vdev_scrub_min_active=1"  >> "$FILE" #DEFAULT:    1
-##                                               =14             #DEFAULT:  =24
+        ## Min queue depths per category (I can't fault most of these, but the sync categories are much higher than they need to be to accomplish the same end per the algorithm used.)
+        echo "options zfs   zfs_vdev_sync_read_min_active=5"  >> "$FILE" #DEFAULT:   10
+        echo "options zfs  zfs_vdev_sync_write_min_active=5"  >> "$FILE" #DEFAULT:   10
+        echo "options zfs  zfs_vdev_async_read_min_active=2"  >> "$FILE" #DEFAULT:    2
+        echo "options zfs zfs_vdev_async_write_min_active=1"  >> "$FILE" #DEFAULT:    1
+        echo "options zfs       zfs_vdev_scrub_min_active=1"  >> "$FILE" #DEFAULT:    1
+        ##                                               =14             #DEFAULT:  =24
 
-## Max queue depths per category
-## The highest sensible value for any of these is probably the CPU core count (in my case, 24 after SMT), or the max queue depth (32), whichever is lower, because any higher would put multiple of the same kind of I/O thread on the same core, which is counterproductive, or because there would be more items to queue than the queue is large.
-## However, 24 is so high as to be meaningless in most contexts (and should be viewed as being effectively uncapped). For the first three categories, that's actually okay; but for the last two categories, having high maxima results in them being given far too much weight. Async writes and scrubs have zero impact on applications, so they should not be allowed more resources than absolutely necessary. Their defaults are reasonable and battle-hardened.
-echo "options zfs   zfs_vdev_sync_read_max_active=24" >> "$FILE" #DEFAULT:   10
-echo "options zfs  zfs_vdev_sync_write_max_active=24" >> "$FILE" #DEFAULT:   10
-echo "options zfs  zfs_vdev_async_read_max_active=24" >> "$FILE" #DEFAULT:   10
-echo "options zfs zfs_vdev_async_write_max_active=3"  >> "$FILE" #DEFAULT:    3
-echo "options zfs       zfs_vdev_scrub_max_active=2"  >> "$FILE" #DEFAULT:    2
-##                                               =77             #DEFAULT:  =35
-## Yes, the total is supposed to be higher than (or equal to) the hard max (32 in my case).
+        ## Max queue depths per category
+        ## Setting these to the max possible within the global limit gives ZFS great freedom to adjust queue contents according to load.
+        ## This idea works well for the first three categories; but for the last two, having high maxima results in them being given far too much weight — async writes and scrubs have zero impact on applications, so they should not be allowed more resources than absolutely necessary. Their defaults are reasonable and battle-hardened.
+        echo "options zfs   zfs_vdev_sync_read_max_active=23" >> "$FILE" #DEFAULT:   10
+        echo "options zfs  zfs_vdev_sync_write_max_active=23" >> "$FILE" #DEFAULT:   10
+        echo "options zfs  zfs_vdev_async_read_max_active=20" >> "$FILE" #DEFAULT:   10
+        echo "options zfs zfs_vdev_async_write_max_active=3"  >> "$FILE" #DEFAULT:    3
+        echo "options zfs       zfs_vdev_scrub_max_active=2"  >> "$FILE" #DEFAULT:    2
+        ##                                               =71             #DEFAULT:  =35
+        ## Yes, the total is supposed to be higher than (or equal to) the hard max (32 in my case).
 
-#RESULT: values under symmetrical load: 32,10,10,7,3,2 (matches default of 32;10,10,7,3,2)
+        ;; #RESULT: values under symmetrical load: 32,10,10,7,3,2 (matches default of 32;10,10,7,3,2)
+    'NVMe')
+        ## Max queue depth (Different NVMes have different limits; typical ones are 64x16 (1024) and 64×64 (4096).)
+        echo "options zfs             zfs_vdev_max_active=$ENV_NVME_QUEUE_DEPTH" >> "$FILE"
+
+        ## Min queue depths per category
+        ## NVMe allows for a ridiculously large queue depth, so these values do not matter a *ton*; they're basically like a starting place for queue allotment.
+        echo "options zfs   zfs_vdev_sync_read_min_active=16" >> "$FILE"
+        echo "options zfs  zfs_vdev_sync_write_min_active=16" >> "$FILE"
+        echo "options zfs  zfs_vdev_async_read_min_active=16" >> "$FILE"
+        echo "options zfs zfs_vdev_async_write_min_active=16" >> "$FILE"
+        echo "options zfs       zfs_vdev_scrub_min_active=1"  >> "$FILE"
+
+        ## Max queue depths per category
+        ## NVMe allows for such a ridiculously large queue depth that there is very little scarcity. I decided to only cap the less-important input types. These should be be adjusted according to the max queue depth supported by your NVMe.
+        echo "options zfs   zfs_vdev_sync_read_max_active=$ENV_NVME_QUEUE_DEPTH"         >> "$FILE"
+        echo "options zfs  zfs_vdev_sync_write_max_active=$ENV_NVME_QUEUE_DEPTH"         >> "$FILE"
+        echo "options zfs  zfs_vdev_async_read_max_active=$ENV_NVME_QUEUE_DEPTH"         >> "$FILE"
+        echo "options zfs zfs_vdev_async_write_max_active=$((ENV_NVME_QUEUE_DEPTH / 4))" >> "$FILE"
+        echo "options zfs       zfs_vdev_scrub_max_active=$((ENV_NVME_QUEUE_DEPTH / 4))" >> "$FILE"
+        ;;
+esac
 
 function apply-setting {
-    [[ ! -f "$2" ]] && return 1
+    [[ -f "$2" ]] || return 1
     COMMAND="echo '$1' > '$2'"
     echo "$COMMAND"
     eval "$COMMAND"
-    [[ ! $? = 0 ]] && echo "$0: current value: $(cat "$2")" >&2
+    [[ $? = 0 ]] || echo "$0: current value: $(cat "$2")" >&2
 }
 
 #TODO: Make persistent via udev, so that it will automatically re-apply whenever devices are inserted/removed.
 #FIXME: Linux assumes rotational by default, which results in flashdrives incorrectly being marked as rotational.
 for DEV in /sys/block/sd* /sys/block/nvme*n*; do
+
+    ## Make sure flash drives are not marked as rotational
+    if udevadm info --query=property --name="$DEV" | grep 'FLASH'; then #WARN: This check doesn't identify every flashdrive, but also it doesn't have a high rate of false-positives, and that's what's most-important.
+        SETTING_NEW=0
+        SETTING_PATH="$DEV/queue/rotational"
+        apply-setting "$SETTING_NEW" "$SETTING_PATH"
+    fi
     ROTATIONAL=$(cat "$DEV/queue/rotational")
+
+    ## If this is a USB device, note if it uses BOT.
+    declare -i IS_BOT=0
+    [[ "$(readlink -f "$DEV/device/driver")" == */usb-storage ]] && IS_BOT=1
 
     ## Configure queue depth limits per-device
     SETTING_NEW=32
     [[ $ROTATIONAL -eq 1 ]] && SETTING_NEW=16 ## Cap HDD queue depths (prevents head-thrashing / improves latency without harming throughput) (16 is what Exoses are rated for.)
+    [[ "$DEV" == *nvme* ]] && SETTING_NEW=$ENV_NVME_QUEUE_DEPTH #TODO: Set this dynamically to the NVMe's actual max queue depth.
+    [[ "$IS_BOT" -eq 1 ]] && SETTING_NEW=1 ## BOT only supports 1.
     SETTING_PATH="$DEV/device/queue_depth"
     apply-setting "$SETTING_NEW" "$SETTING_PATH"
 
     ## Configure schedulers per-device
-    #NOTE: HDDs need a scheduler since they will have queues below what ZFS can control, thanks to their queue cap.
+    #NOTE: HDDs and BOT USBs need a scheduler since they will have queues below what ZFS can control, thanks to their above queue limits.
     SETTING_NEW='mq-deadline'
-    [[ $ROTATIONAL -eq 0 ]] && SETTING_NEW='none'
+    [[ $ROTATIONAL -eq 0 && IS_BOT -eq 0 ]] && SETTING_NEW='none'
     SETTING_PATH="$DEV/queue/scheduler"
     apply-setting "$SETTING_NEW" "$SETTING_PATH"
 
@@ -98,8 +139,20 @@ for DEV in /sys/block/sd* /sys/block/nvme*n*; do
         apply-setting "$SETTING_NEW" "$SETTING_PATH"
     fi
 
-    ## Should match recordsize on disks in ZFS pool
-    if true; then #TODO: Limit to only ZFS disks
+    ## May help to match recordsize on disks in ZFS pool
+    declare -i IS_PART_OF_POOL=0
+    declare -a POOL_NAMES=("$ENV_POOL_NAME_DAS" "$ENV_POOL_NAME_NAS" "$ENV_POOL_NAME_OS")
+    for NAME in "${POOL_NAMES[@]}"; do
+        for DEVICE in $(zpool status -P "$NAME" | sed -E 's/^\/dev\/(.+)p?\d*?$/\1/'); do
+            DISK=$(readlink -f "$DEVICE" | sed 's|/dev/||')
+            if [[ "/sys/block/$DISK" == "$DEV" ]]; then
+                IS_PART_OF_POOL=1
+                break
+            fi
+        done
+        [[ $IS_PART_OF_POOL -eq 1 ]] && break
+    done
+    if [[ $IS_PART_OF_POOL -eq 1 ]]; then
 
         #WARN: This code only works with recordsizes under 1M! (It expects "K".)
         SETTING_NEW="${ENV_RECORDSIZE_HDD%K}" ## Default: 128
