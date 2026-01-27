@@ -14,7 +14,13 @@ fi
 ## Get environment variables
 ENV_FILE='../env.sh'; if [[ -f "$ENV_FILE" ]]; then source "$ENV_FILE"; else echo "ERROR: Missing '$ENV_FILE'."; exit 2; fi
 if [[ \
+    -z "$ENV_DEVICES_IN_L2ARC" ||\
+    -z "$ENV_ENDURANCE_L2ARC" ||\
+    -z "$ENV_MTBF_TARGET_L2ARC" ||\
+    -z "$ENV_RECORDSIZE_HDD" ||\
+    -z "$ENV_RECORDSIZE_SSD" ||\
     -z "$ENV_SECONDS_DATA_LOSS_ACCEPTABLE" ||\
+    -z "$ENV_SPEED_L2ARC" ||\
     -z "$ENV_SPEED_MBPS_MAX_SLOWEST_HDD" ||\
     -z "$ENV_THRESHOLD_SMALL_FILE"
 ]]; then #TODO: Add missing used variables above!
