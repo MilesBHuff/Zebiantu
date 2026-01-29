@@ -177,9 +177,11 @@ done
 
 case "$ENV_NVME_QUEUE_REGIME" in
     'NVMe')
-        echo 'NOTICE: You should run the following properties on your NVMe datasets: direct=always, logbias=throughput'
+        echo 'NOTICE: You should run the following properties on your NVMe datasets: logbias=throughput' ## While `direct=always` would be awesome if it only affected writes, it unfortunately also affects reads.
         ## Skip the ZIL for everything.
-        echo 'options zfs zfs_immediate_write_sz=512' >> "$FILE"
+        echo 'options zfs zfs_immediate_write_sz=512' >> "$FILE" ## Good for avoiding RMW on a device that doesn't really care about fragmentation. Could harm latency normally, but such concerns evaporate under `direct=always`.
+        ## Make TXGs flush quickly (stablizes RAM use, reduces risk of not having PLP, takes advantage of NVMes not being HDDs)
+        ENV_SECONDS_DATA_LOSS_ACCEPTABLE=1
         ;;
     *)
         ## Avoid contention between the SVDEV and the ZIL. Ignored when there is a SLOG.
