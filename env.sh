@@ -27,6 +27,7 @@ export ENV_ZFS_ROOT='/media/zfs'
 
 export ENV_MOUNT_OPTIONS_ESP='noatime,lazytime,sync,flush,tz=UTC,iocharset=utf8,fmask=0137,dmask=0027,nodev,noexec,nosuid'
 export ENV_MOUNT_OPTIONS_OS='noatime,lazytime,ssd,discard=async,compress=lzo' ## These options are for btrfs. This variable is currently unused.
+export ENV_MOUNT_OPTIONS_ZVOL='noatime,lazytime,inode64,logbufs=8,logbsize=256k'
 
 ## Misc Options
 
@@ -124,3 +125,8 @@ export ENV_ZPOOL_COMPRESSION_MOST='zstd-19' ## With ZFS 2.2's early-abort system
 #export ENV_ZPOOL_COMPRESSION_FREE='lz4' ## More-accurately termed 'lz_fast'. Practically no CPU hit for huge space savings, but lackluster in I/O performance -- zstd-fast-1 more than quadruples it in I/O speed (435 vs 1720 MiB/s) and beats it in ratio too (4534297 -> 2366249 -> 1914305).
 #export ENV_ZPOOL_COMPRESSION_BALANCED='zstd-4' ## Best ratio of CPU time to filesize on my system. zstd-2 also works very well -- the two are neck-and-neck, and either can win depending on chance. zstd-4 is technically slower on SSDs, but on *my* SSDs there is no difference.
 #export ENV_ZPOOL_COMPRESSION_MOST='zstd-11' ## Highest level that keeps performance above HDD random I/O is 12, but on my test data it cost 6 more seconds for literally 0 gain vs 11. 11=90M/s, 12=72M/s, 13=38M/s.
+
+## zvol settings
+export ENV_ZVOL_FS='xfs' ## It seems to me like the exact features XFS lacks are the exact features zvols provide; and it also seems to me that XFS is likely to not hugely fight ZFS on things.
+export ENV_ZVOL_BS='4K'  ## Avoids RMW in exchange for a higher metadata cost. Often the right trade to make for VMs, since OSes have lots of tiny files and would incur substantial RMW costs with 8K; and OSes are the only situation I'm using zvols for.
+export ENV_ZVOL_FS_OPTIONS='-m reflink=0,crc=1 -i sparse=1 -l lazy-count=1' ## Disable double CoW, keep CRC just in case, make sparse just like the zvol hosting it, play nicer with TXGs.
