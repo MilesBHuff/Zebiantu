@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: zfs-create-legacy-dataset.bash pool-name"
+    echo "Usage: create-recovered.bash pool-name"
     echo
     echo 'Pass the name of the pool where you want to create this dataset.'
     echo
-    echo 'This dataset is for storing data brought in from disparate other backup sources.'
+    echo 'This dataset is for storing data recovered from damaged filesystems.'
     echo 'Data in this dataset should eventually be organized into other datasets.'
     echo
     echo 'Warning: This script does not check validity — make sure your pool exists.'

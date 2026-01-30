@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: zfs-create-legacy-dataset.bash pool-name"
+    echo "Usage: create-legacy.bash pool-name"
     echo
     echo 'Pass the name of the pool where you want to create this dataset.'
     echo

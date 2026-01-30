@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: zfs-create-os-datasets.bash"
+    echo "Usage: create-os.bash"
     echo
     echo 'Warning: This script does not check validity — make sure your pool exists.'
 }
@@ -16,8 +16,7 @@ fi
 if [[
     -z "$ENV_POOL_NAME_OS" ||\
     -z "$ENV_SNAPSHOT_NAME_INITIAL" ||\
-    -z "$ENV_ZFS_ROOT" ||\
-    -z "$ENV_ZPOOL_COMPRESSION_MOST"
+    -z "$ENV_ZFS_ROOT"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
