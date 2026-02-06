@@ -792,6 +792,42 @@ EOF
 echo ':: Additional configurations...'
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1"
 
+## Sysctl
+echo ':: Configuring sysctl...'
+### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io.conf
+cat > /etc/sysctl.d/961-io-static.conf <<'EOF'
+vm.legacy_va_layout=0
+kernel.io_delay_type=2
+vm.compact_unevictable_allowed=0
+vm.oom_kill_allocating_task=0
+vm.overcommit_memory=0
+vm.overcommit_ratio=80
+vm.memory_failure_recovery=1
+vm.memory_failure_early_kill=1
+vm.laptop_mode=0
+EOF
+cat > /etc/sysctl.d/968-debug.conf <<'EOF'
+net.ipv4.icmp_errors_use_inbound_ifaddr=1
+net.ipv4.icmp_ignore_bogus_error_responses=1
+net.ipv4.conf.all.log_martians=1
+vm.block_dump=0
+vm.oom_dump_tasks=0
+vm.stat_interval=1
+vm.panic_on_oom=0
+kernel.printk = 3 5 2 3
+vm.mem_profiling=0
+EOF
+cat > /etc/sysctl.d/969-security.conf <<'EOF'
+kernel.dmesg_restrict=1
+kernel.kptr_restrict=1
+kernel.yama.ptrace_scope=1
+vm.mmap_min_addr=65536
+fs.protected_fifos = 1
+fs.protected_hardlinks = 1
+fs.protected_regular = 2
+fs.protected_symlinks = 1
+EOF
+
 ## Set kernel commandline
 echo ':: Setting kernel commandline...'
 KERNEL_COMMANDLINE_DIR='/etc/zfsbootmenu/commandline'

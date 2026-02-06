@@ -63,6 +63,23 @@ cat > /etc/modprobe.d/kvm-amd.conf <<'EOF'
 options kvm-amd nested=1
 EOF
 
+## Sysctl
+echo ':: Configuring sysctl...'
+### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io.conf
+cat > /etc/sysctl.d/62-io-tweakable.conf <<'EOF'
+vm.zone_reclaim_mode=0
+vm.swappiness=134
+vm.vfs_cache_pressure=50
+vm.vfs_cache_pressure_denom=100
+kernel.mm.ksm.run=1
+kernel.mm.ksm.pages_to_scan=100
+kernel.mm.ksm.sleep_millisecs=1000
+vm.dirty_writeback_centisecs=500
+vm.dirty_expire_centisecs=1500
+vm.dirty_bytes=1250000000
+vm.dirty_background_bytes=625000000
+EOF
+
 ## Set kernel commandline
 echo "$KERNEL_COMMANDLINE" > "$KERNEL_COMMANDLINE_DIR/commandline.txt"
 "$KERNEL_COMMANDLINE_DIR/set-commandline"
