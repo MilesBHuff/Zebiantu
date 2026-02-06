@@ -855,7 +855,7 @@ set -e
 
 ## Done
 case "$HOSTNAME" in
-    'artemis') exec ./configure-artemis.bash ;;
+    'aetherius') exec ./configure-aetherius.bash ;;
     'hephaestus') exec ./configure-hephaestus.bash ;;
     *) echo ':: Done.' && exit 0 ;;
 esac

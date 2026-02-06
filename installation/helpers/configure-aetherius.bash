@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: configure-artemis.bash"
+    echo "Usage: configure-aetherius.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Artemis (using Debian) in a chroot.'
-    echo 'Artemis is a NAS and home server running on a custom-built computer.'
+    echo 'This is a one-shot script that finishes setting up Aetherius (using Debian) in a chroot.'
+    echo 'Aetherius is a NAS and home server running on a custom-built computer.'
 }
 ## Special thanks to ChatGPT for helping with my endless questions.
 set -euo pipefail
@@ -87,7 +87,7 @@ echo "$KERNEL_COMMANDLINE" > "$KERNEL_COMMANDLINE_DIR/commandline.txt"
 ## Wrap up
 echo ':: Creating snapshot...'
 set +e
-zfs snapshot -r "$ENV_POOL_NAME_OS@install-artemis"
+zfs snapshot -r "$ENV_POOL_NAME_OS@install-aetherius"
 set -e
 
 ## Done
