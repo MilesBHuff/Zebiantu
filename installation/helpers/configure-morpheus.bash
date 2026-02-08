@@ -144,6 +144,7 @@ sysctl --system
 ## Set kernel commandline
 echo "$KERNEL_COMMANDLINE" > "$KERNEL_COMMANDLINE_DIR/commandline.txt"
 "$KERNEL_COMMANDLINE_DIR/set-commandline"
+update-initramfs -u
 
 ## Wrap up
 echo ':: Creating snapshot...'

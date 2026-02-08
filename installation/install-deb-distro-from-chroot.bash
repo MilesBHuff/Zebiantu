@@ -847,6 +847,7 @@ zfs set org.zfsbootmenu:commandline="$COMMANDLINE" "$BOOTFS"
 zfs get org.zfsbootmenu:commandline "$BOOTFS"
 EOF
 export KERNEL_COMMANDLINE_DIR
+"$KERNEL_COMMANDLINE_DIR/set-commandline"
 update-initramfs -u
 
 ##########################################################################################
