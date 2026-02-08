@@ -34,7 +34,7 @@ if [[
 fi
 
 ## Variables
-KERNEL_COMMANDLINE="$(cat "$KERNEL_COMMANDLINE_DIR/commandline.txt" | xargs)"
+KERNEL_COMMANDLINE="$(xargs < "$KERNEL_COMMANDLINE_DIR/commandline.txt")"
 
 echo ':: Installing Ubuntu Server...'
 # apt install -y ubuntu-server-minimal

@@ -33,7 +33,7 @@ if [[
 fi
 
 ## Variables
-KERNEL_COMMANDLINE="$(cat "$KERNEL_COMMANDLINE_DIR/commandline.txt" | xargs)"
+KERNEL_COMMANDLINE="$(xargs < "$KERNEL_COMMANDLINE_DIR/commandline.txt")"
 
 ## Configure network
 echo ':: Configuring network...'
