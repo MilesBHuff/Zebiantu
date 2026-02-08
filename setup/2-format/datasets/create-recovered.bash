@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: create-legacy.bash pool-name"
+    echo "Usage: create-recovered.bash pool-name"
     echo
     echo 'Pass the name of the pool where you want to create this dataset.'
     echo
-    echo 'This dataset is for storing data brought in from disparate other backup sources.'
+    echo 'This dataset is for storing data recovered from damaged filesystems.'
     echo 'Data in this dataset should eventually be organized into other datasets.'
     echo
     echo 'Warning: This script does not check validity — make sure your pool exists.'
@@ -17,10 +17,10 @@ if [[ ! $# -eq 1 ]]; then
 fi
 
 ## Variables
-DATASET_NAME='legacy'
+DATASET_NAME='legacy/recovered'
 
 ## Get environment
-ENV_FILE='../env.sh'
+ENV_FILE='../../../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else
@@ -40,8 +40,7 @@ fi
 set -e
 zfs create \
     \
-    -o utf8only=off \
-    -o normalization=none \
+    -o normalization="$ENV_ZPOOL_NORMALIZATION" \
     \
     -o recordsize="$ENV_RECORDSIZE_ARCHIVE" \
     -o compression="$ENV_ZPOOL_COMPRESSION_MOST" \

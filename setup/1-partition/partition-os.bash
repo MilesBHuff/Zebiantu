@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 function helptext {
-    echo 'Usage: partition-data.bash device0 [device1 ...]'
+    echo 'Usage: partition-os.bash device0 [device1 ...]'
     echo
     echo 'Please pass as arguments all the block devices you wish to partition.'
     echo 'The provided block devices will all be given the same partition layout.'
-    echo 'There will be an SLOG partition and an SVDEV partition.'
+    echo 'There will be an ESP partition and an OS partition.'
     echo
     echo 'You can configure this script by editing `env.sh`.'
     echo
@@ -18,7 +18,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 ## Get environment
-ENV_FILE='../env.sh'
+ENV_FILE='../../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else
@@ -26,6 +26,8 @@ else
     exit 2
 fi
 if [[
+    -z "$ENV_NAME_ESP" ||\
+    -z "$ENV_NAME_OS" ||\
     -z "$ENV_NAME_RESERVED" ||\
     -z "$ENV_NAME_SLOG" ||\
     -z "$ENV_NAME_SVDEV" ||\
@@ -35,7 +37,8 @@ if [[
     exit 3
 fi
 
-## Validate the passed devices
+## Partition the disk
+set -e
 declare -i EXIT_CODE=0
 for DEVICE in "$@"; do
     if [[ ! -b "$DEVICE" ]]; then
@@ -43,41 +46,20 @@ for DEVICE in "$@"; do
         EXIT_CODE=2
         continue
     fi
-done
-set -e
-
-## Clear the devices
-echo ':: Preparing devices for partitioning...'
-for DEVICE in "$@"; do
-    ## TRIM entire device (also wipes data, albeit insecurely)
-    blkdiscard -f "$DEVICE" &
-    ## Create GPT partition table
-    sgdisk --zap-all "$DEVICE" &
-done
-wait
-echo ':: Done!'
-echo
-
-## Partition the devices
-for DEVICE in "$@"; do
-    echo ":: Partitioning '$DEVICE'..."
-
     ## Ensure correct alignment value.
     declare -i ALIGNMENT=$(((1024 ** 2) / $(blockdev --getss "$DEVICE"))) ## Always equals 1MiB in sectors. Is 2048 unless drive is 4Kn, in which case is 256. This math avoids the undesirable default situation which is to waste 8MiB instead of 1MiB on 4Kn disks.
-    echo "'$ALIGNMENT': This should be 2048 (logical sector size == 512B) or 256 (4Kn). If it's neither of those, investigate."
-
-    echo ':: Creating padding partition...'
-    echo 'This partition sits at the end of the drive, and helps you to resilver with drives of slightly different sizes.'
-    echo 'This partition is equal to 8MiB, and is not aligned to drive sectors. Creating it will throw warnings about alignment; ignore them.'
+    ## TRIM entire device (also wipes data, albeit insecurely)
+    # blkdiscard -f "$DEVICE"
+    ## Create GPT partition table
+    set +e
+    sgdisk --zap-all "$DEVICE" >/dev/null 2>&1 ## First run seems to always fail on this one; maybe some kind of issue with mdadm?
+    set -e
+    sgdisk --zap-all "$DEVICE"
+    ## Create reserved partition (to allow for future drive size mismatches)
     sgdisk --set-alignment=1 --new=9:-"$ENV_ZFS_SECTORS_RESERVED":0 --typecode=9:BF07 --change-name=9:"$ENV_NAME_RESERVED" "$DEVICE"
-
-    echo ':: Creating SLOG partition...'
-    sgdisk --set-alignment=$ALIGNMENT --new=1:0:+12GiB --typecode=1:BF02 --change-name=1:"$ENV_NAME_SLOG" "$DEVICE"
-
-    echo ':: Creating SVDEV partition...'
-    sgdisk --set-alignment=$ALIGNMENT --new=2:0:0 --typecode=2:BF01 --change-name=2:"$ENV_NAME_SVDEV" "$DEVICE"
-
-    echo ":: Done with '$DEVICE'."
-    echo
+    ## Create ESP
+    sgdisk --set-alignment=$ALIGNMENT --new=1:0:+261MiB --typecode=1:EF00 --change-name=1:"${ENV_NAME_ESP^^}" "$DEVICE" ## Microsoft has good reasons for using 260MiB for its own ESPs: 260MiB is the bare minimum that FAT32 can be with 4K sectors. We then add an extra 1MiB to that to fit the 128KiB from mdadm.
+    ## Create ZFS Partition
+    sgdisk --set-alignment=$ALIGNMENT --new=2:0:0 --typecode=2:BF00 --change-name=2:"${ENV_NAME_OS^^}" "$DEVICE"
 done
 exit $EXIT_CODE

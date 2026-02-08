@@ -11,7 +11,7 @@ function helptext {
 set -euo pipefail
 
 ## Get environment
-ENV_FILE='../env.sh'
+ENV_FILE='../../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else

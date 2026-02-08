@@ -22,7 +22,7 @@ fi
 [[ $# -gt 1 ]] && MIRROR='mirror' && ZPOOL_REDUNDANT_METADATA='most' || ZPOOL_REDUNDANT_METADATA='all'
 
 ## Get environment
-ENV_FILE='../env.sh'
+ENV_FILE='../../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else

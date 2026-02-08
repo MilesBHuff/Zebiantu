@@ -37,7 +37,7 @@ function touch_chmod {
 
 ## Get environment
 CWD=$(pwd)
-ENV_FILE='../env.sh'
+ENV_FILE='../../env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else
