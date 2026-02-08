@@ -20,7 +20,7 @@ function helptext {
 ## FUNCTIONS                                                                  ##
 ################################################################################
 
-function idempotent_append {
+function idempotent_append { #TODO: Break into helper script, since it's re-used by other scripts.
     ## $1: What to append
     ## $2: Where to append it
     [[ ! -f "$2" ]] && touch "$2"

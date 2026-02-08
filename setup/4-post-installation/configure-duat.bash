@@ -15,6 +15,17 @@ function helptext {
 ## Special thanks to ChatGPT for helping with my endless questions.
 
 ################################################################################
+## FUNCTIONS                                                                  ##
+################################################################################
+
+function idempotent_append { #TODO: Break into helper script, since it's re-used by other scripts.
+    ## $1: What to append
+    ## $2: Where to append it
+    [[ ! -f "$2" ]] && touch "$2"
+    grep -Fqx -- "$1" "$2" || printf '%s\n' "$1" >> "$2"
+}
+
+################################################################################
 ## ENVIRONMENT                                                                ##
 ################################################################################
 
