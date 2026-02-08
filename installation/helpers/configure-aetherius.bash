@@ -2,7 +2,7 @@
 function helptext {
     echo "Usage: configure-aetherius.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Aetherius (using Debian) in a chroot.'
+    echo 'This is a one-shot script that finishes setting up Aetherius (using Debian).'
     echo 'Aetherius is a NAS and home server running on a custom-built computer.'
 }
 ## Special thanks to ChatGPT for helping with my endless questions.
@@ -17,16 +17,18 @@ else
     exit 2
 fi
 if [[
+    -z "$ENV_INSTALLER_ENVFILE" ||\
     -z "$ENV_POOL_NAME_OS"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
 fi
+source "$ENV_INSTALLER_ENVFILE"
 if [[
     -z "$KERNEL_COMMANDLINE_DIR" ||\
     -z "$DEBIAN_VERSION"
 ]]; then
-    echo "ERROR: This script is designed to be executed by \`install-deb-distro-from-chroot.bash\`." >&2
+    echo "ERROR: Missing variables in '$ENV_INSTALLER_ENVFILE'!" >&2
     exit 4
 fi
 
@@ -77,7 +79,7 @@ ExecStart=
 ExecStart=/usr/local/sbin/infnoise --daemon --pidfile=/var/run/infnoise.pid --dev-random --feed-frequency=30 --reseed-crng
 EOF
 systemctl daemon-reload
-# systemctl start infnoise ## Shouldn't start/stop from chroot.
+systemctl start infnoise
 
 ## Configure CPU features
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE amd_iommu=on" ## Leaving `iommu=pt` off for security.

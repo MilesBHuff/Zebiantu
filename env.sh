@@ -130,3 +130,6 @@ export ENV_ZPOOL_COMPRESSION_MOST='zstd-19' ## With ZFS 2.2's early-abort system
 export ENV_ZVOL_FS='xfs' ## It seems to me like the exact features XFS lacks are the exact features zvols provide; and it also seems to me that XFS is likely to not hugely fight ZFS on things.
 export ENV_ZVOL_BS='4K'  ## Avoids RMW in exchange for a higher metadata cost. Often the right trade to make for VMs, since OSes have lots of tiny files and would incur substantial RMW costs with 8K; and OSes are the only situation I'm using zvols for.
 export ENV_ZVOL_FS_OPTIONS='-m reflink=0,crc=1 -i sparse=1 -l lazy-count=1' ## Disable double CoW, keep CRC just in case, make sparse just like the zvol hosting it, play nicer with TXGs.
+
+## Caches
+ENV_INSTALLER_ENVFILE='/env/installer.env'

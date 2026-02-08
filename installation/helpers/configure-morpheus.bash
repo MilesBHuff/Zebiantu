@@ -2,7 +2,7 @@
 function helptext {
     echo "Usage: configure-morpheus.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Morpheus (using Ubuntu) in a chroot.'
+    echo 'This is a one-shot script that finishes setting up Morpheus (using Ubuntu).'
     echo 'Morpheus is an AI inference server running on a maxed-out Framework Desktop.'
 }
 ## Special thanks to ChatGPT for helping with my endless questions.
@@ -17,17 +17,19 @@ else
     exit 2
 fi
 if [[
+    -z "$ENV_INSTALLER_ENVFILE" ||\
     -z "$ENV_POOL_NAME_OS"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
 fi
+source "$ENV_INSTALLER_ENVFILE"
 if [[
     -z "$KERNEL_COMMANDLINE_DIR" ||\
     -z "$UBUNTU_VERSION" ||\
     -z "$USERNAME"
 ]]; then
-    echo "ERROR: This script is designed to be executed by \`install-deb-distro-from-chroot.bash\`." >&2
+    echo "ERROR: Missing variables in '$ENV_INSTALLER_ENVFILE'!" >&2
     exit 4
 fi
 
@@ -54,8 +56,8 @@ network:
   version: 2
   renderer: NetworkManager
 EOF
-# systemctl stop systemd-networkd ## Shouldn't start/stop from chroot.
-# systemctl start NetworkManager ## Shouldn't start/stop from chroot.
+systemctl stop systemd-networkd
+systemctl start NetworkManager
 netplan apply
 systemctl enable NetworkManager
 systemctl disable systemd-networkd
@@ -93,7 +95,7 @@ apt install -y tesseract-ocr
 echo ':: Setting up Docker...'
 apt install -y docker.io
 systemctl enable docker
-# systemctl start docker ## Shouldn't start/stop from chroot.
+systemctl start docker
 usermod -aG docker "$USERNAME"
 
 echo ':: Setting up ROCm...'

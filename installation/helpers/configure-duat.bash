@@ -2,7 +2,7 @@
 function helptext {
     echo "Usage: configure-duat.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Duat (using Ubuntu) in a chroot.'
+    echo 'This is a one-shot script that finishes setting up Duat (using Ubuntu).'
     echo 'Duat is the host for Anubis, an OPNsense guest VM acting as a firewall and edge router.'
     echo 'It runs on a BeeLink with an Intel N100, a 128G RAID1 array of two single-lane NVMes, and 16G of non-ECC DDR5 SODIMM memory.'
 }
@@ -18,17 +18,19 @@ else
     exit 2
 fi
 if [[
+    -z "$ENV_INSTALLER_ENVFILE" ||\
     -z "$ENV_POOL_NAME_OS"
 ]]; then
     echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
     exit 3
 fi
+source "$ENV_INSTALLER_ENVFILE"
 if [[
     -z "$KERNEL_COMMANDLINE_DIR" ||\
     -z "$UBUNTU_VERSION" ||\
     -z "$USERNAME"
 ]]; then
-    echo "ERROR: This script is designed to be executed by \`install-deb-distro-from-chroot.bash\`." >&2
+    echo "ERROR: Missing variables in '$ENV_INSTALLER_ENVFILE'!" >&2
     exit 4
 fi
 
@@ -47,8 +49,8 @@ network:
   version: 2
   renderer: NetworkManager
 EOF
-# systemctl stop systemd-networkd ## Shouldn't start/stop from chroot.
-# systemctl start NetworkManager ## Shouldn't start/stop from chroot.
+systemctl stop systemd-networkd
+systemctl start NetworkManager
 netplan apply
 systemctl enable NetworkManager
 systemctl disable systemd-networkd
@@ -112,7 +114,7 @@ cat > /etc/NetworkManager/conf.d/99-only-manage-virtio-net.conf <<'EOF'
 [keyfile]
 unmanaged-devices=interface-name:en*,interface-name:wl*
 EOF
-# systemctl restart NetworkManager ## Shouldn't start/stop from chroot.
+systemctl restart NetworkManager
 ## Use a firewall rule to make extra-sure that host does not use its physical ports
 cat > /etc/nftables.conf <<EOF
 #!/usr/sbin/nft -f
@@ -134,7 +136,7 @@ table inet filter {
     }
 }
 EOF
-# systemctl start nftables ## Shouldn't start/stop from chroot.
+systemctl start nftables
 ## Configure physical NICs for passthrough #WARN: FreeBSD Wi-Fi support is... *spotty*, to say the least.
 cat > /etc/udev/rules.d/99-nic-passthrough.rules <<'EOF'
 SUBSYSTEM=="pci", ATTR{class}=="0x020000", ATTR{driver_override}="vfio-pci"

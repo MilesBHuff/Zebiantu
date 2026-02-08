@@ -861,7 +861,14 @@ set -e
 ##########################################################################################
 
 ## Done
+cat > "$ENV_INSTALLER_ENVFILE" <<EOF
+KERNEL_COMMANDLINE_DIR="$KERNEL_COMMANDLINE_DIR"
+UBUNTU_VERSION="$UBUNTU_VERSION"
+DEBIAN_VERSION="$DEBIAN_VERSION"
+EOF
+echo ':: Done.'
 case "$HOSTNAME" in
-    'aetherius'|'morpheus'|'duat') exec "./helpers/configure-$HOSTNAME.bash" ;;
-    *) echo ':: Done.' && exit 0 ;;
+    'aetherius'|'morpheus'|'duat') echo "To continue installation, reboot and then execute \`./configure-$HOSTNAME.bash\`." ;;
+    *) echo "WARN: Unsupported hostname: '$HOSTNAME'" ;;
 esac
+exit 0
