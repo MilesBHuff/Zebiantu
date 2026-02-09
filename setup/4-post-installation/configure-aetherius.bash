@@ -67,7 +67,7 @@ systemctl enable nut-monitor
 ## Drivers
 apt install -y amd64-microcode firmware-amd-graphics firmware-mellanox firmware-realtek
 ## Tools
-apt install -y ipmitool mstflint openseachest
+apt install -y ipmitool openseachest
 ## Controllers
 apt install -y -t "$DEBIAN_VERSION-backports" openrgb
 
