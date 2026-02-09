@@ -101,6 +101,12 @@ apt install -y intel-microcode firmware-intel-graphics firmware-realtek
 ## The main thing that needs to be done for this is a custom ZBM that contains the sealed key and instructions for how to unseal it. We don't actually have to go through the trouble of storing the sealed key in the initramfs because the system can auto-load the raw key from /etc/zfs/keys after ZBM unlocks it.
 ## If the ESP flashdrive ever dies or gets corrupted, the recovery path is pretty simple: new flashdrive, vanilla ZBM, temp disable SB, manual unlock, regenerate custom ZBM, reboot, reenable SB.
 
+## Make sure we actually have a TPM.
+if [[ ! -e /dev/tpmrm0 ]]; then
+    echo "ERROR: No TPM detected!"
+    exit 5
+fi
+
 ## Install requisites
 apt install -y clevis clevis-tpm2 tpm2-tools
 
@@ -116,7 +122,7 @@ clevis encrypt tpm2 '{"pcr_ids":"7"}' < "$KEY" > "$BLOB"
 unset KEY
 chmod 0600 "$BLOB"
 sync
-clevis decrypt < "$BLOB" | head
+clevis decrypt < "$BLOB" | head -n 1
 
 ## Ensure ZBM is capable of unsealing the key.
 install -dm 0755 /etc/zfsbootmenu/dracut.conf.d

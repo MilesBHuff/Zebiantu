@@ -135,7 +135,7 @@ rocminfo
 echo ':: Setting up directories...'
 AI_DIR=/srv/ai
 mkdir -p "$AI_DIR"
-chown "$USERNAME" "$AI_DIR"
+chown -R "$USERNAME" "$AI_DIR"
 
 ##########################################################################################
 ## ADDITIONAL CONFIGURATION                                                             ##
