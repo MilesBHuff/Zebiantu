@@ -10,3 +10,4 @@ For the sake of clarity:
     * `./storcliconf.ini`
     * `./README.md`
     * `./storcli`
+    * `./.gitignore`
