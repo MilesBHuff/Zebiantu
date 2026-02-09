@@ -18,6 +18,10 @@ function helptext {
     echo
     echo 'Why bother? Well, Linux can do all of the following where FreeBSD either struggles or simply can’t: TPM, SecureBoot, ZFSBootManager, optimal hardware support, latest microcode, firmware updates.'
     echo 'Running OPNsense in a VM on a Linux host gives us the best of all worlds. Yes, it adds some complexity, but it removes other complexities and provides a level of security that just isn’t possible with a bare-metal BSD system.'
+    echo
+    echo 'A router is an absurdly high-value target for an evil-maid attack: it has the ability to see everything your network is doing, it can MITM literally everything, it can effortlessly exfiltrate anything it sees, and more.'
+    echo 'A router is also one of the easiest devices to compromise: It’s left alone in the open without supervision 99% of the time, and it is rarely even superficially inspected.'
+    echo 'So I must insist that what is insane is not that I’ve gone through the effort of writing this script; it’s that others view this level of security — the bare minimum needed to prevent trivial evil-maid attacks — as unreasonable.'
 }
 ## Special thanks to ChatGPT for helping with my endless questions.
 
