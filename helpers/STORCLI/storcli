@@ -1,0 +1,8 @@
+#!/bin/sh
+CWD=$(pwd)
+trap 'cd "$CWD"' EXIT
+cd /opt/MegaRAID/storcli
+echo "$@"
+sudo ./storcli64 "$@"
+EXIT_CODE=$?
+exit $EXIT_CODE

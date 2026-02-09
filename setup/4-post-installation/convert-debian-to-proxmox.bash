@@ -11,7 +11,7 @@ set -euo pipefail
 SCRIPT=$(mktemp)
 curl -O https://raw.githubusercontent.com/MrMasterbay/proxmox-from-scratch/main/little-goblin.sh "$SCRIPT"
 chmod +x "$SCRIPT"
-exec "$SCRIPT"
-# source "$SCRIPT"
-# rm "$SCRIPT"
-# unset SCRIPT
+# exec "$SCRIPT"
+source "$SCRIPT"
+rm "$SCRIPT"
+unset SCRIPT
