@@ -71,27 +71,27 @@ KERNEL_COMMANDLINE=''
 echo ':: Configuring apt...'
 case $DISTRO in
     1) cat > /etc/apt/sources.list <<EOF ;;
-deb      http://deb.debian.org/debian/                $DEBIAN_VERSION                   main contrib non-free-firmware non-free
-deb-src  http://deb.debian.org/debian/                $DEBIAN_VERSION                   main contrib non-free-firmware non-free
+deb      https://deb.debian.org/debian/                $DEBIAN_VERSION                   main contrib non-free-firmware non-free
+deb-src  https://deb.debian.org/debian/                $DEBIAN_VERSION                   main contrib non-free-firmware non-free
 
-deb      http://deb.debian.org/debian/                $DEBIAN_VERSION-backports         main contrib non-free-firmware non-free
-deb-src  http://deb.debian.org/debian/                $DEBIAN_VERSION-backports         main contrib non-free-firmware non-free
+deb      https://deb.debian.org/debian/                $DEBIAN_VERSION-backports         main contrib non-free-firmware non-free
+deb-src  https://deb.debian.org/debian/                $DEBIAN_VERSION-backports         main contrib non-free-firmware non-free
 
-deb      http://deb.debian.org/debian/                $DEBIAN_VERSION-backports-sloppy  main contrib non-free-firmware non-free
-deb-src  http://deb.debian.org/debian/                $DEBIAN_VERSION-backports-sloppy  main contrib non-free-firmware non-free
+deb      https://deb.debian.org/debian/                $DEBIAN_VERSION-backports-sloppy  main contrib non-free-firmware non-free
+deb-src  https://deb.debian.org/debian/                $DEBIAN_VERSION-backports-sloppy  main contrib non-free-firmware non-free
 
-deb      http://security.debian.org/debian-security/  $DEBIAN_VERSION-security          main contrib non-free-firmware non-free
-deb-src  http://security.debian.org/debian-security/  $DEBIAN_VERSION-security          main contrib non-free-firmware non-free
+deb      https://security.debian.org/debian-security/  $DEBIAN_VERSION-security          main contrib non-free-firmware non-free
+deb-src  https://security.debian.org/debian-security/  $DEBIAN_VERSION-security          main contrib non-free-firmware non-free
 
-deb      http://deb.debian.org/debian/                $DEBIAN_VERSION-updates           main contrib non-free-firmware non-free
-deb-src  http://deb.debian.org/debian/                $DEBIAN_VERSION-updates           main contrib non-free-firmware non-free
+deb      https://deb.debian.org/debian/                $DEBIAN_VERSION-updates           main contrib non-free-firmware non-free
+deb-src  https://deb.debian.org/debian/                $DEBIAN_VERSION-updates           main contrib non-free-firmware non-free
 EOF
     2) cat > /etc/apt/sources.list.d/official-package-repositories.list <<EOF
-deb http://archive.ubuntu.com/ubuntu/     $UBUNTU_VERSION            main restricted universe multiverse
-#deb http://archive.canonical.com/ubuntu/ $UBUNTU_VERSION            partner
-deb http://archive.ubuntu.com/ubuntu/     $UBUNTU_VERSION-updates    main restricted universe multiverse
-deb http://archive.ubuntu.com/ubuntu/     $UBUNTU_VERSION-backports  main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu/    $UBUNTU_VERSION-security   main restricted universe multiverse
+deb https://archive.ubuntu.com/ubuntu/     $UBUNTU_VERSION            main restricted universe multiverse
+#deb https://archive.canonical.com/ubuntu/ $UBUNTU_VERSION            partner
+deb https://archive.ubuntu.com/ubuntu/     $UBUNTU_VERSION-updates    main restricted universe multiverse
+deb https://archive.ubuntu.com/ubuntu/     $UBUNTU_VERSION-backports  main restricted universe multiverse
+deb https://security.ubuntu.com/ubuntu/    $UBUNTU_VERSION-security   main restricted universe multiverse
 EOF
     set +e
     ${EDITOR:-nano} /etc/apt/sources.list.d/*

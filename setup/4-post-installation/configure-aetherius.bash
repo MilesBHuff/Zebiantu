@@ -100,7 +100,7 @@ if [[ ! -f "$SOURCES_FILE" ]]; then
     wget -qO- 'https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox' | gpg --dearmor > "$KEYRING"
     chmod 644 "$KEYRING"
     cat > "$SOURCES_FILE" <<EOF
-deb [signed-by=$KEYRING] http://linux.mellanox.com/public/repo/mlnx_ofed/$OFED_VERSION/$DISTRO_VERSION/x86_64 ./
+deb [signed-by=$KEYRING] https://linux.mellanox.com/public/repo/mlnx_ofed/$OFED_VERSION/$DISTRO_VERSION/x86_64 ./
 EOF
     chmod 644 "$SOURCES_FILE"
     unset KEYRING OFED_VERSION DISTRO_VERSION SOURCES_FILE
