@@ -89,19 +89,29 @@ if [[ ! -d '/opt/MegaRAID/installer' ]]; then
     ./install.sh
 fi
 
-## Install the latest version of MFT
-if systemctl cat mst >/dev/null 2>&1; then
-    cd "$ROOT_DIR/software/MFT"
-    MFT_TGZ='mft.tar.gz'
-    MFT_URL='https://www.mellanox.com/downloads/MFT/mft-4.34.1-10-x86_64-deb.tgz'
-    curl -L "$MFT_URL" -o "$MFT_TGZ"
-    unset MFT_URL
-    tar -xzf "$MFT_TGZ"
-    rm -f "$MFT_TGZ"
-    unset MFT_TGZ
-    cd mft*
-    ./install.sh
-    systemctl enable mst
+## Install Mellanox stuff
+## Special thanks to [Nilson Lopes](https://gist.github.com/noslin005/b0d315c814cd1cb37a7aafdae5df4ef0) and ChatGPT for helping with this section.
+SOURCES_FILE='/etc/apt/sources.list.d/ofed.list'
+if [[ ! -f "$SOURCES_FILE" ]]; then
+    OFED_VERSION='latest'
+    DISTRO_VERSION='Debian12.5' #FIXME: We're on Debian 13 Trixie, but Nvidia hasn't shipped for that yet.
+    SOURCES_FILE='/etc/apt/sources.list.d/ofed.list'
+    KEYRING='/usr/share/keyrings/ofed.gpg'
+    wget -qO- 'https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox' | gpg --dearmor > "$KEYRING"
+    chmod 644 "$KEYRING"
+    cat > "$SOURCES_FILE" <<EOF
+deb [signed-by=$KEYRING] http://linux.mellanox.com/public/repo/mlnx_ofed/$OFED_VERSION/$DISTRO_VERSION/x86_64 ./
+EOF
+    chmod 644 "$SOURCES_FILE"
+    unset KEYRING OFED_VERSION DISTRO_VERSION SOURCES_FILE
+    apt update
+    apt install -y mft mlnx-fw-updater mlnx-tools mlnx-ethtool
+
+    ## Only install MFT's DKMS extension if our system can't talk to our Mellanox card natively.
+    if ! mlxconfig -d "$(lspci -Dn | awk '/15b3/ {print $1; exit}')" q >/dev/null 2>&1; then #AI #WARN: Only checks the first Mellanox card. That's fine for this server, because we only have the one.
+        apt install -y kernel-mft-dkms
+        systemctl enable --now mst
+    fi
 fi
 
 ## Done
