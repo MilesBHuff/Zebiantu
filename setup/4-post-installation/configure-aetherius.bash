@@ -18,7 +18,9 @@ function helptext {
 ################################################################################
 
 ## Get environment
-ENV_FILE='../../env.sh'
+CWD=$(pwd)
+ROOT_DIR="$CWD/../.."
+ENV_FILE="$ROOT_DIR"
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else
@@ -66,10 +68,44 @@ systemctl enable nut-monitor
 apt install -y amd64-microcode firmware-amd-graphics firmware-mellanox firmware-realtek
 ## Tools
 apt install -y ipmitool mstflint openseachest
-#TODO: Install proprietary tools: STORCLI MFT
-# systemctl enable mst
 ## Controllers
 apt install -y -t "$DEBIAN_VERSION-backports" openrgb
+
+##########################################################################################
+## PROPRIETARY SOFTWARE                                                                 ##
+##########################################################################################
+
+## Install STORCLI 3.5 P34
+if [[ ! -d '/opt/MegaRAID/storcli' ]]; then
+    read -rp 'After you have downloaded and extracted STORCLI to the appropriate directory in this repo, press "Enter". ' FOO; unset FOO
+    cd "$ROOT_DIR/software/STORCLI/Ubuntu"
+    ./install.sh
+fi
+
+## Install SAS3FLASH (necessary for self-signing the UEFI ROM)
+if [[ ! -d '/opt/MegaRAID/installer' ]]; then
+    read -rp 'After you have downloaded and extracted SAS3FLASH and SAS3IRCU to the appropriate directory in this repo, press "Enter". ' FOO; unset FOO
+    cd "$ROOT_DIR/software/SAS3FLASH"
+    ./install.sh
+fi
+
+## Install the latest version of MFT
+if systemctl cat mst >/dev/null 2>&1; then
+    cd "$ROOT_DIR/software/MFT"
+    MFT_TGZ='mft.tar.gz'
+    MFT_URL='https://www.mellanox.com/downloads/MFT/mft-4.34.1-10-x86_64-deb.tgz'
+    curl -L "$MFT_URL" -o "$MFT_TGZ"
+    unset MFT_URL
+    tar -xzf "$MFT_TGZ"
+    rm -f "$MFT_TGZ"
+    unset MFT_TGZ
+    cd mft*
+    ./install.sh
+    systemctl enable mst
+fi
+
+## Done
+cd "$CWD"
 
 ##########################################################################################
 ## SET UP TRNG                                                                          ##
