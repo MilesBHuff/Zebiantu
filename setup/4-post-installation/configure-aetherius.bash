@@ -20,7 +20,7 @@ function helptext {
 ## Get environment
 CWD=$(pwd)
 ROOT_DIR="$CWD/../.."
-ENV_FILE="$ROOT_DIR"
+ENV_FILE="$ROOT_DIR/env.sh"
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else
