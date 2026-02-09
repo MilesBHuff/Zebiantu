@@ -114,6 +114,33 @@ EOF
     fi
 fi
 
+## Install Supermicro BIOS tool
+if [[ ! -f '/usr/local/sbin/ipmicfg' ]]; then
+    cd "$ROOT_DIR/software/IPMICFG"
+    ARCHIVE='IPMICFG.ZIP'
+    SIG='IPMICFG.SIG'
+    URL='https://www.supermicro.com/Bios/sw_download/965/IPMICFG_1.37.0_build.250723' ## Updated: 2025-08-13 | Checked: 2026-02-09
+    set +e
+    while true; do
+        curl -fL "$URL.zip" -o "$ARCHIVE"
+        curl -fL "$URL.sig" -o "$SIG"
+        if gpg --verify "$SIG" "$ARCHIVE"; then #FIXME: There is no way to know that the sig and the archive weren't *both* MITM'd.
+            break
+        else
+            read -rp 'Download failed; press "Enter" to try again. ' FOO && unset FOO
+        fi
+    done
+    set -e
+    rm "$SIG"
+    unset URL SIG
+    unzip "$ARCHIVE"
+    rm -f "$ARCHIVE"
+    unset ARCHIVE
+    mv IPMICFG_*/ ./
+    rmdir IPMICFG_*/
+    ./install.sh ## I wrote this script.
+fi
+
 ## Done
 cd "$CWD"
 
