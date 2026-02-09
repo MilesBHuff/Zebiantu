@@ -19,3 +19,4 @@ For the sake of clarity:
     * `./9305-16i/flash.sh`
 * The following files were written from scratch by Miles Bradley Huff in 2026:
     * `./README.md`
+    * `./install.sh`
