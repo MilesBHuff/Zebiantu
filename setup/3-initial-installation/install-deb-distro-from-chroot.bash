@@ -845,7 +845,7 @@ KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1" ## Easy but small 
 
 ## Sysctl
 echo ':: Configuring sysctl...'
-### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io.conf
+### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io-static.conf
 cat > /etc/sysctl.d/961-io-static.conf <<'EOF'
 vm.legacy_va_layout=0
 kernel.io_delay_type=2
@@ -857,6 +857,7 @@ vm.memory_failure_recovery=1
 vm.memory_failure_early_kill=1
 vm.laptop_mode=0
 EOF
+### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/68-debug.conf
 cat > /etc/sysctl.d/968-debug.conf <<'EOF'
 net.ipv4.icmp_errors_use_inbound_ifaddr=1
 net.ipv4.icmp_ignore_bogus_error_responses=1
@@ -868,6 +869,7 @@ vm.panic_on_oom=0
 kernel.printk = 3 5 2 3
 vm.mem_profiling=0
 EOF
+### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/69-security.conf
 cat > /etc/sysctl.d/969-security.conf <<'EOF'
 kernel.dmesg_restrict=1
 kernel.kptr_restrict=1

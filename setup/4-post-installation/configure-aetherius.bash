@@ -183,7 +183,7 @@ EOF
 
 ## Sysctl
 echo ':: Configuring sysctl...'
-### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io.conf
+### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
 cat > /etc/sysctl.d/62-io-tweakable.conf <<'EOF'
 vm.zone_reclaim_mode=0
 vm.swappiness=134
