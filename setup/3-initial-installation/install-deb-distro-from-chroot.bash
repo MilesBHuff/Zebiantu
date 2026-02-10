@@ -333,6 +333,7 @@ TUNE_IO_SERVICE='tune-zfs.service'
 cat > "/etc/systemd/system/$TUNE_IO_SERVICE" <<EOF
 [Unit]
 Description=Configure system-wide ZFS and block-device settings
+DefaultDependencies=no
 Requires=zfs.target
 After=systemd-udev-settle.service zfs-import.target zfs.target
 Before=multi-user.target
@@ -341,13 +342,14 @@ ConditionPathExists=$ENV_TUNE_IO_SCRIPT
 ExecStart=$ENV_TUNE_IO_SCRIPT
 Type=oneshot
 RemainAfterExit=yes
+TimeoutSec=1min
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable --now "$TUNE_IO_SERVICE"
+systemctl enable "$TUNE_IO_SERVICE" #NOTE: Not starting now, since we're in a chroot.
 cat > /etc/udev/rules.d/90-tune-zfs.rules <<EOF #AI
-ACTION=="add|change", SUBSYSTEM=="block", DEVTYPE=="disk", TEST=="/sys/module/zfs", RUN+="/bin/systemctl start --no-block $TUNE_IO_SERVICE"
+ACTION=="add|change", SUBSYSTEM=="block", DEVTYPE=="disk", ENV{DEVNAME}!="", TEST=="/sys/module/zfs", RUN+="/bin/systemctl start --no-block $TUNE_IO_SERVICE"
 EOF
 udevadm control --reload-rules
 unset TUNE_IO_SERVICE
