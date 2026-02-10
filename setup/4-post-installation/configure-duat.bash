@@ -316,53 +316,11 @@ Wants=libvirtd.service
 EOF
 
 ##########################################################################################
-## TTY ASSIGNMENTS                                                                      ##
-##########################################################################################
-
-## Dedicate a TTY to the host console. (TTY10)
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE console=tty10"
-
-## Dedicate a TTY to the Anubis's console. (TTY11)
-SCRIPT='/usr/local/bin/vm-to-tty'
-cat > "$SCRIPT" <<'EOF' && chmod 755 "$SCRIPT"
-#!/bin/dash
-set -eu
-if [ $# -ne 2 ]; then
-    echo 'Usage: `vm-to-tty vm_name tty_number`' >&2
-    exit 1
-fi
-VM="$1"; TTY="$2"
-unset 1 2
-clear
-while true; do
-    PTS=$(virsh ttyconsole "$VM" 2>/dev/null || true)
-    if [ -n "$PTS" ] && [ -e "$PTS" ]; then
-        exec socat "/dev/tty$TTY",raw,echo=0 "$PTS",raw,echo=0
-    fi
-    sleep 1
-done
-EOF
-cat > '/etc/systemd/system/assign-anubis-to-tty@.service' <<EOF
-[Unit]
-Description=Assign Anubis's serial console to %i
-Requires=libvirtd.service
-After=libvirtd.service libvirt-guests.service
-[Service]
-ExecStart=$SCRIPT anubis tty%i
-Restart=always
-RestartSec=1
-StandardInput=null
-StandardOutput=null
-StandardError=journal
-[Install]
-WantedBy=multi-user.target
-EOF
-sudo systemctl daemon-reload
-sudo systemctl enable --now assign-anubis-to-tty@11.service
-
-##########################################################################################
 ## ADDITIONAL CONFIGURATION                                                             ##
 ##########################################################################################
+
+## Anubis's serial console gets TTY11.
+sudo systemctl enable --now vm-to-tty@anubis:11.service
 
 ## Sysctl
 echo ':: Configuring sysctl...'
