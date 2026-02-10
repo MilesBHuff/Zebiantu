@@ -249,6 +249,10 @@ for DEV in /sys/block/sd* /sys/block/nvme*n*; do
             SETTING_NEW=$((SETTING_NEW * 1024))
             apply_setting "$SETTING_NEW" "$SETTING_PATH"
         fi
+
+        ## Why do this, especially given that recordsize is per-dataset, not per-pool? And given that these aren't even used by ZFS?
+        ## Well, honestly, it's just kind of a nicety to keep everything using the same heuristics and general design.
+        ## I grant that these two tweaks are not particularly important, and it is totally valid to skip them.
     fi
 done
 
