@@ -107,11 +107,23 @@ apt full-upgrade -y
 apt install -y unattended-upgrades
 dpkg-reconfigure -plow unattended-upgrades
 
+##########################################################################################
+## BASE SYSTEM                                                                          ##
+##########################################################################################
+
+echo ':: Installing base system...'
+case "$HOSTNAME" in
+    'aetherius') ;;
+    'morpheus'|'duat') apt install -y ubuntu-server ;;
+    *) echo "WARN: Unsupported hostname: '$HOSTNAME'" ;;
+esac
+
 ################################################################################
 ## INSTALL FUNDAMENTAL PACKAGES                                               ##
 ################################################################################
 
 ## Install build tools
+echo ':: Installing build tools...'
 apt install -y build-essential pkg-config
 
 ## Install Linux
@@ -555,6 +567,7 @@ if efi-readvar -v PK | grep -q 'No PK present'; then
     echo "INFO: To update your BIOS's SecureBoot database, you will have to append to the 'DB.esl' file, sign it as a 'DB.auth' file, and run \`efi-updatevar -f $SBDIR/auth/db.auth db\`."
     cd "$CWD"
 else
+    echo ':: Setting up SecureBoot...'
     echo "WARN: SecureBoot not in Setup Mode; may be unable to proceed."
 fi
 
@@ -601,16 +614,6 @@ EOF
 generate-zbm
 sbverify --list /boot/esp/EFI/ZBM/*.EFI
 sbverify --list /boot/esp/EFI/BOOT/BOOTX64.EFI
-
-##########################################################################################
-## BASE SYSTEM                                                                          ##
-##########################################################################################
-
-case "$HOSTNAME" in
-    'aetherius') ;; #TODO: Do we need to install a Debian equivalent to `ubuntu-server` here?
-    'morpheus'|'duat') apt install -y ubuntu-server ;;
-    *) echo "WARN: Unsupported hostname: '$HOSTNAME'" ;;
-esac
 
 ##########################################################################################
 ## PACKAGES                                                                             ##
@@ -765,6 +768,8 @@ fi
 unset VARKEEP_DIR
 
 ##########################################################################################
+## SIZES                                                                                ##
+##########################################################################################
 
 ## Disable or (if impossible to disable) adjust various compressions to save CPU (ZFS does compression for us extremely cheaply, and space is very plentiful on the OS drives.)
 echo ':: Tweaking various compression settings...'
@@ -779,9 +784,8 @@ for FILE in /etc/logrotate.conf /etc/logrotate.d/*; do
 done
 unset FILE
 
-##########################################################################################
-
 ## Limit log size
+echo ':: Limiting log sizes...'
 mkdir -p /etc/systemd/journald.conf.d
 cat > /etc/systemd/journald.conf.d/max-size.conf <<'EOF'
 [Journal]
@@ -793,6 +797,7 @@ EOF
 ##########################################################################################
 ## TTY ASSIGNMENTS                                                                      ##
 ##########################################################################################
+echo ':: Assigning TTYs...'
 
 ## Put the host console at 10.
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE console=10"
@@ -838,10 +843,8 @@ sudo systemctl daemon-reload
 ## The idea is that VMs' serial consoles can own all TTYs higher than 10.
 
 ##########################################################################################
-
-## More configuration
-echo ':: Additional configurations...'
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1" ## Easy but small security win.
+## ADDITIONAL CONFIGURATION                                                             ##
+##########################################################################################
 
 ## Sysctl
 echo ':: Configuring sysctl...'
@@ -881,6 +884,9 @@ idempotent_append 'fs.protected_regular = 2'   '/etc/sysctl.d/969-security.conf'
 idempotent_append 'fs.protected_symlinks = 1'  '/etc/sysctl.d/969-security.conf'
 sysctl --system
 
+echo ':: Additional configurations...'
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1" ## Easy but small security win.
+
 ## Set kernel commandline
 echo ':: Setting kernel commandline...'
 KERNEL_COMMANDLINE_DIR='/etc/zfsbootmenu/commandline'
@@ -898,14 +904,14 @@ export KERNEL_COMMANDLINE_DIR
 update-initramfs -u
 
 ##########################################################################################
+## OUTRO                                                                                ##
+##########################################################################################
 
 ## Wrap up
 echo ':: Creating snapshot...'
 set +e
 zfs snapshot -r "$ENV_POOL_NAME_OS@install-$DISTRO"
 set -e
-
-##########################################################################################
 
 ## Done
 cat > "$ENV_INSTALLER_ENVFILE" <<EOF
