@@ -104,7 +104,9 @@ if [ ! -f "$ENV_CACHE" ]; then
 fi
 
 ## Read environment from cache.
+set -e
 export "$(cat "$ENV_CACHE")"
+set +e
 unset ENV_CACHE
 
 ## Check interactivity
@@ -162,7 +164,7 @@ if [ -d '/sys/module/zfs' ]; then
                 ;;
         esac
     done <<EOF
-$(zpool list -v -H -P 2>/dev/null)
+$(zpool list -vHP 2>/dev/null)
 EOF
 fi
 
