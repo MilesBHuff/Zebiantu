@@ -11,3 +11,4 @@ export UBUNTU_VERSION='noble' #TODO: Change once Resolute Racoon (26.04) comes o
 
 ## Misc
 export ENV_ENV_KERNEL_COMMANDLINE_DIR='/etc/zfsbootmenu/commandline'
+export ENV_ZFS_CONFIG_SCRIPT='/etc/zfs/configure-zfs.sh'

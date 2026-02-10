@@ -38,25 +38,30 @@ echo ':: Getting environment...'
 
 ## Base paths
 CWD=$(pwd)
-ROOT_DIR="$CWD/../.."
 
 ## Load and validate environment variables
-load_envfile "$ROOT_DIR/filesystem-env.sh" \
+declare -a ENV_VARS=(
+    "$DISTRO"
+    "$ENV_FILESYSTEM_ENVFILE"
+    "$ENV_SETUP_ENVFILE"
+    "$ENV_ZFS_CONFIG_SCRIPT"
+    "$TARGET"
+)
+for ENV_VAR in "${ENV_VARS[@]}"; do
+    if [[ -z "$ENV_VAR" ]]; then
+    echo "ERROR: This script is designed to be run from a \`chroot\` spawned by \`install-deb-distro.bash\`." >&2
+    exit 4
+    fi
+done
+unset ENV_VARS
+load_envfile "$ENV_FILESYSTEM_ENVFILE" \
     "$ENV_NAME_ESP" \
     "$ENV_POOL_NAME_OS" \
     "$ENV_ZFS_ROOT"
-load_envfile "$ROOT_DIR/setup-env.sh" \
-    "$ENV_SETUP_ENVFILE" \
+load_envfile "$ENV_SETUP_ENVFILE" \
     "$DEBIAN_VERSION" \
     "$UBUNTU_VERSION" \
     "$ENV_KERNEL_COMMANDLINE_DIR"
-if [[
-    -z "$DISTRO" ||\
-    -z "$TARGET"
-]]; then
-    echo "ERROR: This script is designed to be run from a \`chroot\` spawned by \`install-deb-distro.bash\`." >&2
-    exit 4
-fi
 
 ## Misc local variables
 KERNEL_COMMANDLINE=''
@@ -321,6 +326,9 @@ alias usb usb-*
 alias dev wwn-*
 EOF
 echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
+
+## Configure ZFS
+# $ENV_ZFS_CONFIG_SCRIPT #TODO
 
 ## Configure trim/discard
 echo ':: Scheduling trim...'
@@ -910,8 +918,6 @@ zfs snapshot -r "$ENV_POOL_NAME_OS@install-$DISTRO"
 set -e
 
 ## Done
-cat "$ROOT_DIR/filesystem-env.sh" > "$ENV_FILESYSTEM_ENVFILE"
-cat "$ROOT_DIR/setup-env.sh" > "$ENV_SETUP_ENVFILE"
 echo ':: Done.'
 case "$HOSTNAME" in
     'aetherius'|'morpheus'|'duat') echo "To continue installation, reboot and then execute \`./configure-$HOSTNAME.bash\`." ;;

@@ -106,6 +106,11 @@ done
 unset FILES
 cp -a /etc/hostid etc/hostid ## ZFS keeps track of the host that imported it in its cachefile, so we need to keep the same hostid as the LiveCD.
 
+## Bring over config files
+install -m 755 "$ROOT_DIR/filesystem-env.sh" "$TARGET$ENV_FILESYSTEM_ENVFILE"; export ENV_FILESYSTEM_ENVFILE
+install -m 755 "$ROOT_DIR/setup-env.sh" "$TARGET$ENV_SETUP_ENVFILE"; export ENV_SETUP_ENVFILE
+install -m 755 "$ROOT_DIR/settings/configure-zfs.sh" "$TARGET$ENV_ZFS_CONFIG_SCRIPT"; export ENV_ZFS_CONFIG_SCRIPT
+
 ################################################################################
 ## CHROOT                                                                     ##
 ################################################################################
