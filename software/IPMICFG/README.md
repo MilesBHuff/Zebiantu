@@ -1,4 +1,6 @@
 Download the latest version of IPMICFG for your system [here](https://www.supermicro.com/en/support/resources/downloadcenter/smsdownload).
+Download its signature, too.
+Verify that the archive matches the signature. (Note: This does not reliably protect against a MITM, since both the archive and the signature are downloaded.)
 Extract the files.
 Copy/paste the right binary for your system to somewhere on your PATH.
 Mark it as executable.
