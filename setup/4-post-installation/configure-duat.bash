@@ -325,17 +325,15 @@ sudo systemctl enable --now vm-to-tty@anubis:11.service
 ## Sysctl
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
-cat > /etc/sysctl.d/62-io-tweakable.conf <<'EOF'
-vm.zone_reclaim_mode=0
-vm.swappiness=134
-vm.vfs_cache_pressure=50
-vm.vfs_cache_pressure_denom=100
-kernel.mm.ksm.run=0
-kernel.mm.ksm.pages_to_scan=100
-kernel.mm.ksm.sleep_millisecs=1000
-vm.dirty_writeback_centisecs=500
-vm.dirty_expire_centisecs=1500
-EOF
+idempotent_append 'vm.zone_reclaim_mode=0'             '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'vm.swappiness=134'                  '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'vm.vfs_cache_pressure=50'           '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'vm.vfs_cache_pressure_denom=100'    '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'kernel.mm.ksm.run=0'                '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'kernel.mm.ksm.pages_to_scan=100'    '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'kernel.mm.ksm.sleep_millisecs=1000' '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'vm.dirty_writeback_centisecs=500'   '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'vm.dirty_expire_centisecs=1500'     '/etc/sysctl.d/62-io-tweakable.conf'
 sysctl --system
 
 ## Set kernel commandline
