@@ -193,7 +193,7 @@ if ! passwd -S root 2>/dev/null | grep -q ' P '; then
     echo 'Please enter a complex password for the root user: '
     passwd
 fi
-cp -a /etc/skel/. /root/
+cp /etc/skel/. /root/
 read -rp "Please enter a username for your personal user: " USERNAME
 id "$USERNAME" >/dev/null 2>&1 || adduser "$USERNAME"
 export USERNAME
