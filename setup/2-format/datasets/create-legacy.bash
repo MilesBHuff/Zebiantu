@@ -20,7 +20,7 @@ fi
 DATASET_NAME='legacy'
 
 ## Get environment
-ENV_FILE='../../../env.sh'
+ENV_FILE='../../../filesystem-env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else

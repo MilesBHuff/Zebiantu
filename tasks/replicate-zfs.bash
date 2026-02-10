@@ -8,7 +8,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 ## Get environment variables
-ENV_FILE='../env.sh'; if [[ -f "$ENV_FILE" ]]; then source "$ENV_FILE"; else echo "ERROR: Missing '$ENV_FILE'."; exit -1; fi
+ENV_FILE='../filesystem-env.sh'; if [[ -f "$ENV_FILE" ]]; then source "$ENV_FILE"; else echo "ERROR: Missing '$ENV_FILE'."; exit -1; fi
 if [[ \
     -z "$ENV_POOL_NAME_DAS" ||\
     -z "$ENV_POOL_NAME_NAS" ||\

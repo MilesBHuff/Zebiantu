@@ -6,7 +6,7 @@ function helptext {
     echo 'The provided block devices will all be given the same partition layout and formatting.'
     echo 'There will be an ESP partition and an OS partition.'
     echo
-    echo 'You can configure this script by editing `env.sh`.'
+    echo 'You can configure this script by editing `filesystem-env.sh`.'
     echo
     echo 'Info: This script is written for putting the OS on an NVMe.'
     echo 'Warning: This script does not check validity. Make sure your block devices exist and are the same size.'
@@ -19,7 +19,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 ## Get environment
-ENV_FILE='../../env.sh'
+ENV_FILE='../../filesystem-env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else

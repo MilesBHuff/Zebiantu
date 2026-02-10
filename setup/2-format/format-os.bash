@@ -5,7 +5,7 @@ function helptext {
     echo 'Pass at least one block device as an argument.'
     echo 'If more than one device is specified, then all will be made into mirrors of each other.'
     echo
-    echo 'You can configure this script by editing `env.sh`.'
+    echo 'You can configure this script by editing `filesystem-env.sh`.'
     echo
     echo 'Warning: This script does not check validity. Make sure your block devices exist and are the same size.'
     echo 'Info: This script is written for putting the OS on an SSD.'
@@ -22,7 +22,7 @@ fi
 [[ $# -gt 1 ]] && MIRROR='mirror' && ZPOOL_REDUNDANT_METADATA='most' || ZPOOL_REDUNDANT_METADATA='all'
 
 ## Get environment
-ENV_FILE='../../env.sh'
+ENV_FILE='../../filesystem-env.sh'
 if [[ -f "$ENV_FILE" ]]; then
     source "$ENV_FILE"
 else

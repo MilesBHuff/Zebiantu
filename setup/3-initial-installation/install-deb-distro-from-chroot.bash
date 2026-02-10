@@ -19,49 +19,46 @@ function helptext {
 ################################################################################
 ## FUNCTIONS                                                                  ##
 ################################################################################
+echo ':: Declaring functions...'
 
-function idempotent_append { #TODO: Break into helper script, since it's re-used by other scripts.
-    ## $1: What to append
-    ## $2: Where to append it
-    [[ ! -f "$2" ]] && touch "$2"
-    grep -Fqx -- "$1" "$2" || printf '%s\n' "$1" >> "$2"
-}
-function touch_chmod {
-    touch "$1"
-    chmod "$2" "$1"
-}
+declare -a HELPERS=('../helpers/load_envfile.bash' '../helpers/idempotent_append.bash')
+for HELPER in "${HELPERS[@]}"; do
+    if [[ -x "$HELPER" ]]; then
+        source "$HELPER"
+    else
+        echo "ERROR: Failed to load '$HELPER'." >&2
+        exit 1
+    fi
+done
 
 ################################################################################
 ## ENVIRONMENT                                                                ##
 ################################################################################
+echo ':: Getting environment...'
 
-## Get environment
+## Base paths
 CWD=$(pwd)
-ENV_FILE='../../env.sh'
-if [[ -f "$ENV_FILE" ]]; then
-    source "$ENV_FILE"
-else
-    echo "ERROR: Missing '$ENV_FILE'." >&2
-    exit 2
-fi
+ROOT_DIR="$CWD/../.."
+
+## Load and validate environment variables
+load_envfile "$ROOT_DIR/filesystem-env.sh" \
+    "$ENV_NAME_ESP" \
+    "$ENV_POOL_NAME_OS" \
+    "$ENV_ZFS_ROOT"
+load_envfile "$ROOT_DIR/setup-env.sh" \
+    "$ENV_SETUP_ENVFILE" \
+    "$DEBIAN_VERSION" \
+    "$UBUNTU_VERSION" \
+    "$ENV_KERNEL_COMMANDLINE_DIR"
 if [[
-    -z "$ENV_INSTALLER_ENVFILE" ||\
-    -z "$ENV_NAME_ESP" ||\
-    -z "$ENV_POOL_NAME_OS" ||\
-    -z "$ENV_ZFS_ROOT"
-]]; then
-    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
-    exit 3
-fi
-if [[
-    -z "$DEBIAN_VERSION" ||\
     -z "$DISTRO" ||\
-    -z "$TARGET" ||\
-    -z "$UBUNTU_VERSION"
+    -z "$TARGET"
 ]]; then
     echo "ERROR: This script is designed to be run from a \`chroot\` spawned by \`install-deb-distro.bash\`." >&2
     exit 4
 fi
+
+## Misc local variables
 KERNEL_COMMANDLINE=''
 
 ################################################################################
@@ -514,7 +511,7 @@ KEYDIR=/etc/zfs/keys
 install -m 700 -d "$KEYDIR"
 KEYFILE="$KEYDIR/$ENV_POOL_NAME_OS.key"
 if [[ ! -f "$KEYFILE" ]]; then
-    touch_chmod "$KEYFILE" 600
+    install -m 600 '/dev/null' "$KEYFILE"
     read -rp "A file is about to open; enter your ZFS encryption password into it. This is necessary to prevent double-prompting during boot. Press 'Enter' to continue. " _; unset _
     nano "$KEYFILE"
 fi
@@ -889,18 +886,17 @@ KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE page_alloc.shuffle=1" ## Easy but small 
 
 ## Set kernel commandline
 echo ':: Setting kernel commandline...'
-KERNEL_COMMANDLINE_DIR='/etc/zfsbootmenu/commandline'
-mkdir -p "$KERNEL_COMMANDLINE_DIR"
-echo "$KERNEL_COMMANDLINE" > "$KERNEL_COMMANDLINE_DIR/commandline.txt"
-echo '#!/bin/sh' > "$KERNEL_COMMANDLINE_DIR/set-commandline"
-echo 'BOOTFS=$(zpool get -Ho value bootfs '"$ENV_POOL_NAME_OS"')' > "$KERNEL_COMMANDLINE_DIR/set-commandline"
-cat >> "$KERNEL_COMMANDLINE_DIR/set-commandline" <<'EOF'
+mkdir -p "$ENV_KERNEL_COMMANDLINE_DIR"
+echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
+echo '#!/bin/sh' > "$ENV_KERNEL_COMMANDLINE_DIR/set-commandline"
+echo 'BOOTFS=$(zpool get -Ho value bootfs '"$ENV_POOL_NAME_OS"')' > "$ENV_KERNEL_COMMANDLINE_DIR/set-commandline"
+cat >> "$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" <<'EOF'
 COMMANDLINE="$(awk '{for(i=1;i<=NF;i++){t=$i;if(index(t,"=")){split(t,a,"=");m[a[1]]=t}else m[t]=t}}END{for(k in m)printf "%s ",m[k]}' /etc/zfsbootmenu/commandline/commandline.txt)" ## AI code that deduplicates like keys, keeping the rightmost instances.
 zfs set org.zfsbootmenu:commandline="$COMMANDLINE" "$BOOTFS"
 zfs get org.zfsbootmenu:commandline "$BOOTFS"
 EOF
-export KERNEL_COMMANDLINE_DIR
-"$KERNEL_COMMANDLINE_DIR/set-commandline"
+export ENV_KERNEL_COMMANDLINE_DIR
+"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline"
 update-initramfs -u
 
 ##########################################################################################
@@ -914,11 +910,8 @@ zfs snapshot -r "$ENV_POOL_NAME_OS@install-$DISTRO"
 set -e
 
 ## Done
-cat > "$ENV_INSTALLER_ENVFILE" <<EOF
-KERNEL_COMMANDLINE_DIR="$KERNEL_COMMANDLINE_DIR"
-UBUNTU_VERSION="$UBUNTU_VERSION"
-DEBIAN_VERSION="$DEBIAN_VERSION"
-EOF
+cat "$ROOT_DIR/filesystem-env.sh" > "$ENV_FILESYSTEM_ENVFILE"
+cat "$ROOT_DIR/setup-env.sh" > "$ENV_SETUP_ENVFILE"
 echo ':: Done.'
 case "$HOSTNAME" in
     'aetherius'|'morpheus'|'duat') echo "To continue installation, reboot and then execute \`./configure-$HOSTNAME.bash\`." ;;

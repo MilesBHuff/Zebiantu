@@ -28,44 +28,39 @@ function helptext {
 ################################################################################
 ## FUNCTIONS                                                                  ##
 ################################################################################
+echo ':: Declaring functions...'
 
-function idempotent_append { #TODO: Break into helper script, since it's re-used by other scripts.
-    ## $1: What to append
-    ## $2: Where to append it
-    [[ ! -f "$2" ]] && touch "$2"
-    grep -Fqx -- "$1" "$2" || printf '%s\n' "$1" >> "$2"
-}
+declare -a HELPERS=('../helpers/load_envfile.bash' '../helpers/idempotent_append.bash')
+for HELPER in "${HELPERS[@]}"; do
+    if [[ -x "$HELPER" ]]; then
+        source "$HELPER"
+    else
+        echo "ERROR: Failed to load '$HELPER'." >&2
+        exit 1
+    fi
+done
 
 ################################################################################
 ## ENVIRONMENT                                                                ##
 ################################################################################
+echo ':: Getting environment...'
 
-## Get environment
-ENV_FILE='../../env.sh'
-if [[ -f "$ENV_FILE" ]]; then
-    source "$ENV_FILE"
-else
-    echo "ERROR: Missing '$ENV_FILE'." >&2
-    exit 2
-fi
-if [[
-    -z "$ENV_INSTALLER_ENVFILE" ||\
-    -z "$ENV_POOL_NAME_OS"
-]]; then
-    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
-    exit 3
-fi
-source "$ENV_INSTALLER_ENVFILE"
-if [[
-    -z "$KERNEL_COMMANDLINE_DIR" ||\
-    -z "$UBUNTU_VERSION"
-]]; then
-    echo "ERROR: Missing variables in '$ENV_INSTALLER_ENVFILE'!" >&2
-    exit 4
-fi
+## Base paths
+CWD=$(pwd)
+ROOT_DIR="$CWD/../.."
 
-## Variables
-KERNEL_COMMANDLINE="$(xargs < "$KERNEL_COMMANDLINE_DIR/commandline.txt")"
+## Load and validate environment variables
+load_envfile "$ROOT_DIR/setup-env.sh" \
+    "$ENV_FILESYSTEM_ENVFILE" \
+    "$ENV_SETUP_ENVFILE"
+load_envfile "$ENV_FILESYSTEM_ENVFILE" \
+    "$ENV_POOL_NAME_OS"
+load_envfile "$ENV_SETUP_ENVFILE" \
+    "$UBUNTU_VERSION" \
+    "$ENV_KERNEL_COMMANDLINE_DIR"
+
+## Misc local variables
+KERNEL_COMMANDLINE="$(xargs < "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt")"
 
 ##########################################################################################
 ## INITIAL CONFIG                                                                       ##
@@ -333,8 +328,8 @@ idempotent_append 'vm.dirty_expire_centisecs=1500'     '/etc/sysctl.d/62-io-twea
 sysctl --system
 
 ## Set kernel commandline
-echo "$KERNEL_COMMANDLINE" > "$KERNEL_COMMANDLINE_DIR/commandline.txt"
-"$KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
+echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
+"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
 update-initramfs -u
 
 ##########################################################################################

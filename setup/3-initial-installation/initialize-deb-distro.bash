@@ -18,6 +18,17 @@ function helptext {
 ################################################################################
 ## FUNCTIONS                                                                  ##
 ################################################################################
+echo ':: Declaring functions...'
+
+declare -a HELPERS=('../helpers/load_envfile.bash')
+for HELPER in "${HELPERS[@]}"; do
+    if [[ -x "$HELPER" ]]; then
+        source "$HELPER"
+    else
+        echo "ERROR: Failed to load '$HELPER'." >&2
+        exit 1
+    fi
+done
 
 function cleanup {
     set +e
@@ -27,39 +38,32 @@ function cleanup {
 ################################################################################
 ## ENVIRONMENT                                                                ##
 ################################################################################
+echo ':: Getting environment...'
 
-## Get environment
-ENV_FILE='../../env.sh'
-if [[ -f "$ENV_FILE" ]]; then
-    source "$ENV_FILE"
-else
-    echo "ERROR: Missing '$ENV_FILE'." >&2
-    exit 2
-fi
-if [[
-    -z "$ENV_NAME_ESP" ||\
-    -z "$ENV_POOL_NAME_OS" ||\
-    -z "$ENV_ZFS_ROOT"
-]]; then
-    echo "ERROR: Missing variables in '$ENV_FILE'!" >&2
-    exit 3
-fi
+## Base paths
+CWD=$(pwd)
+ROOT_DIR="$CWD/../.."
 
-## Set variables
-echo ':: Setting variables...'
-export UBUNTU_VERSION='noble' #TODO: Change once Resolute Racoon (26.04) comes out.
-export DEBIAN_VERSION='trixie'
+## Load and validate environment variables
+load_envfile "$ROOT_DIR/filesystem-env.sh" \
+    "$ENV_NAME_ESP" \
+    "$ENV_POOL_NAME_OS" \
+    "$ENV_ZFS_ROOT"
+load_envfile "$ROOT_DIR/setup-env.sh" \
+    "$ENV_SETUP_ENVFILE" \
+    "$DEBIAN_VERSION" \
+    "$UBUNTU_VERSION"
+
+################################################################################
+## MOUNTS                                                                     ##
+################################################################################
+
 export TARGET="$ENV_ZFS_ROOT/$ENV_POOL_NAME_OS"
 if ! mountpoint -q "$TARGET"; then
     echo "ERROR: Target '$TARGET' not mounted!" >&2
     exit 4
 fi
-CWD=$(pwd)
 cd "$TARGET"
-
-################################################################################
-## MOUNTS                                                                     ##
-################################################################################
 
 ## Mount tmpfs dirs
 echo ':: Mounting tmpfs dirs...'
