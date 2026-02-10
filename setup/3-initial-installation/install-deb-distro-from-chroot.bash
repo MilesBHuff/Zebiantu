@@ -44,7 +44,7 @@ declare -a ENV_VARS=(
     "$DISTRO"
     "$ENV_FILESYSTEM_ENVFILE"
     "$ENV_SETUP_ENVFILE"
-    "$ENV_ZFS_CONFIG_SCRIPT"
+    "$ENV_TUNE_IO_SCRIPT"
     "$TARGET"
 )
 for ENV_VAR in "${ENV_VARS[@]}"; do
@@ -327,29 +327,30 @@ alias dev wwn-*
 EOF
 echo 'Make sure to import your pools with `import -d /dev/disk/by-id`! Else, you will fail to import when `/dev/sdX` changes. '
 
-## Configure ZFS
-echo ':: Configuring ZFS...'
-ZFS_SERVICE='configure-zfs.service'
-cat > "/etc/systemd/system/$ZFS_SERVICE" <<EOF
+## Configure ZFS and tune I/O
+echo ':: Tuning I/O...'
+TUNE_IO_SERVICE='tune-zfs.service'
+cat > "/etc/systemd/system/$TUNE_IO_SERVICE" <<EOF
 [Unit]
 Description=Configure system-wide ZFS and block-device settings
 Requires=zfs.target
 After=systemd-udev-settle.service zfs-import.target zfs.target
 Before=multi-user.target
-ConditionPathExists=$ENV_ZFS_CONFIG_SCRIPT
+ConditionPathExists=$ENV_TUNE_IO_SCRIPT
 [Service]
-ExecStart=$ENV_ZFS_CONFIG_SCRIPT
+ExecStart=$ENV_TUNE_IO_SCRIPT
 Type=oneshot
 RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
-systemctl enable --now "$ZFS_SERVICE"
-cat > /etc/udev/rules.d/90-configure-zfs.rules <<EOF #AI
-ACTION=="add|change", SUBSYSTEM=="block", DEVTYPE=="disk", TEST=="/sys/module/zfs", RUN+="/bin/systemctl start --no-block $ZFS_SERVICE"
+systemctl enable --now "$TUNE_IO_SERVICE"
+cat > /etc/udev/rules.d/90-tune-zfs.rules <<EOF #AI
+ACTION=="add|change", SUBSYSTEM=="block", DEVTYPE=="disk", TEST=="/sys/module/zfs", RUN+="/bin/systemctl start --no-block $TUNE_IO_SERVICE"
 EOF
 udevadm control --reload-rules
+unset TUNE_IO_SERVICE
 
 ## Configure trim/discard
 echo ':: Scheduling trim...'

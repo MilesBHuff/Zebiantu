@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-## Configure ZFS kernel settings
+## Configure ZFS kernel settings and tune system I/O generally.
 
 #################
 ## PREPARATION ##

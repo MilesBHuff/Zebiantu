@@ -109,7 +109,7 @@ cp -a /etc/hostid etc/hostid ## ZFS keeps track of the host that imported it in 
 ## Bring over config files
 install -m 755 "$ROOT_DIR/filesystem-env.sh" "$TARGET$ENV_FILESYSTEM_ENVFILE"; export ENV_FILESYSTEM_ENVFILE
 install -m 755 "$ROOT_DIR/setup-env.sh" "$TARGET$ENV_SETUP_ENVFILE"; export ENV_SETUP_ENVFILE
-install -m 755 "$ROOT_DIR/settings/configure-zfs.sh" "$TARGET$ENV_ZFS_CONFIG_SCRIPT"; export ENV_ZFS_CONFIG_SCRIPT
+install -m 755 "$ROOT_DIR/settings/tune-io.sh" "$TARGET$ENV_TUNE_IO_SCRIPT"; export ENV_TUNE_IO_SCRIPT
 
 ################################################################################
 ## CHROOT                                                                     ##
