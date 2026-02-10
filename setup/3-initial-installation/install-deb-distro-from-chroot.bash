@@ -204,7 +204,7 @@ export USERNAME
 
 ## Configure swap
 echo ':: Configuring swap...'
-## Putting swap on ZFS is *very* fraught; don't do it.
+## Putting live swap on ZFS is *very* fraught; don't do it!
 ## Using a swap partition is a permanent loss of disk space, and there is much complexity involved because it must be encrypted — that means mdadm and LUKS beneath it.
 ## Swapping to zram (a compressed RAMdisk) is by *far* the simplest solution *and* its size is dynamic according to need, but it cannot be hibernated to.
 ## Hibernation support can be re-added by creating a temporary swap zvol when hibernation is requested, and removing it after resuming.
