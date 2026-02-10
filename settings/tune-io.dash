@@ -180,14 +180,12 @@ for DEV in /sys/block/sd* /sys/block/nvme*n*; do
     ## Attempt to mark flash drives are non-rotational, accepting that there will be false negatives.
     ROTATIONAL=$(cat "$DEV/queue/rotational" 2>/dev/null || echo 1)
     if [ $ROTATIONAL -eq 1 ]; then
-        case "$(udevadm info --query=property --name="$DEV_NODE" 2>/dev/null)" in #TODO: Find a faster way to do this.
-            *FLASH*) #NOTE: This heuristic is imperfect, and depends upon the device not lying about being FLASH. To be fair, if rotational media advertises itself as "FLASH", it's not really our fault if we misidentify it here.
-                SETTING_NEW=0
-                SETTING_PATH="$DEV/queue/rotational"
-                apply_setting "$SETTING_NEW" "$SETTING_PATH"
-                ROTATIONAL=$SETTING_NEW #NOTE: Not guaranteed to be true, but this is cheaper than doing a real check, and the rest of this script actually works better if it operates off the intended rotational status versus the actual.
-                ;;
-        esac
+        if udevadm info --query=property --name="$DEV_NODE" 2>/dev/null | grep -qi 'Flash'; then #TODO: Find a faster way to do this. #NOTE: This heuristic is imperfect, and depends upon the device not lying about being FLASH. To be fair, if rotational media advertises itself as "FLASH", it's not really our fault if we misidentify it here.
+            SETTING_NEW=0
+            SETTING_PATH="$DEV/queue/rotational"
+            apply_setting "$SETTING_NEW" "$SETTING_PATH"
+            ROTATIONAL=$SETTING_NEW #NOTE: Not guaranteed to be true, but this is cheaper than doing a real check, and the rest of this script actually works better if it operates off the intended rotational status versus the actual.
+        fi
     fi
 
     ## If device is USB, detect BOT vs UAS
