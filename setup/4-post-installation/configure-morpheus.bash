@@ -125,7 +125,7 @@ echo ':: Setting up ROCm...'
 apt install -y wget gnupg2 ca-certificates
 wget -qO - https://repo.radeon.com/rocm/rocm.gpg.key | gpg --dearmor | tee /usr/share/keyrings/rocm.gpg > /dev/null
 ROCM_VERSION=latest
-ROCM_DISTRO=noble #TODO: Change once Resolute Racoon (26.04) comes out.
+ROCM_DISTRO=noble #TODO: Change once support lands for Resolute Racoon (26.04).
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/$ROCM_VERSION/Dists/$ROCM_DISTRO $ROCM_DISTRO main" > /etc/apt/sources.list.d/rocm.list
 apt update
 apt install -y rocm-core rocm-hip-runtime rocm-opencl-runtime rocminfo

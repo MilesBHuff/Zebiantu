@@ -256,7 +256,6 @@ swap-priority = 32767
 EOF
 systemctl daemon-reload
 # systemctl start systemd-zram-setup@zram0 ## Shouldn't start/stop from chroot.
-#TODO: Configure swappiness and such. (It should be higher than default, as on this system swap is much cheaper than disk, so it can be advantageous to swap anons versus dropping pages.)
 
 ## Configure `/tmp` as tmpfs
 echo ':: Configuring `/tmp`...'
@@ -269,7 +268,7 @@ Options=mode=1777,nosuid,nodev,size=5G,noatime
 ## 5G is enough space to have 1G free while extracting a 4G archive (the max supported by FAT32). 1G is plenty for normal operation. ## No point in `lazytime` when the filesystem is in RAM.
 EOF
 mkdir -p /etc/systemd/system/console-setup.service.d
-cat > /etc/systemd/system/console-setup.service.d/override.conf <<'EOF' #BUG: Resolves an issue where console-setup can happen shortly before tmpfs mounts and accordingly fail when tmpfs effectively deletes /tmp while console-setup is happening.
+cat > /etc/systemd/system/console-setup.service.d/override.conf <<'EOF' #BUG: Resolves an upstream issue where console-setup can happen shortly before tmpfs mounts and accordingly fail when tmpfs effectively deletes /tmp while console-setup is happening.
 [Unit]
 # Requires=tmp.mount
 After=tmp.mount

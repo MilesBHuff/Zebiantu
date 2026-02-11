@@ -209,7 +209,6 @@ EOF
 systemctl restart NetworkManager
 
 ## Use a firewall rule to ensure the host does not use the passed-through interfaces.
-#TODO: Maybe make it so that this supports later-inserted USB Ethernet interfaces.
 cat > /etc/nftables.conf <<EOF #AI
 #!/usr/sbin/nft -f
 flush ruleset
