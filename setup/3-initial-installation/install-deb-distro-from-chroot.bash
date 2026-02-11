@@ -668,6 +668,8 @@ generate-zbm
 sbverify --list /boot/esp/EFI/ZBM/*.EFI
 sbverify --list /boot/esp/EFI/BOOT/BOOTX64.EFI
 
+#TODO: Make ZBM host a dropbear ssh service, to enable manual remote unlocks. Ideally, this only starts when unlocking fails.
+
 ##########################################################################################
 ## PACKAGES                                                                             ##
 ##########################################################################################
