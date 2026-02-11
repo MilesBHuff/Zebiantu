@@ -9,7 +9,7 @@ function helptext {
 set -euo pipefail
 
 SCRIPT=$(mktemp)
-curl -O https://raw.githubusercontent.com/MrMasterbay/proxmox-from-scratch/main/little-goblin.sh "$SCRIPT"
+curl -O https://raw.githubusercontent.com/MrMasterbay/proxmox-from-scratch/main/little-goblin.sh "$SCRIPT" #TODO: I don't really agree with all their decisions, and would accordingly like to have my own conversion script.
 chmod +x "$SCRIPT"
 # exec "$SCRIPT"
 source "$SCRIPT"
