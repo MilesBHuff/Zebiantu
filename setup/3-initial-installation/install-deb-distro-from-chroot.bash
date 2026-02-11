@@ -669,25 +669,6 @@ sbverify --list /boot/esp/EFI/ZBM/*.EFI
 sbverify --list /boot/esp/EFI/BOOT/BOOTX64.EFI
 
 ##########################################################################################
-## HIBERNATION                                                                          ##
-##########################################################################################
-
-#TODO
-##
-## enable hibernation
-## but before hibernation happens, we create a new sparse zvol with compression enabled
-## we put a sparse swap partition on that zvol equal to total consumed RAM
-## we set its priority to the absolute max
-## then we hibernate
-##
-## initramfs needs then to unhibernate from this zvol
-## then delete the zvol
-##
-## at the end of normal boots, we should look for and delete the zvol, just in case something goes wrong and the hibernation fails mid-way through
-##
-## NUT needs to be configured to trigger hibernation when UPS battery is low.
-
-##########################################################################################
 ## PACKAGES                                                                             ##
 ##########################################################################################
 
@@ -727,6 +708,25 @@ apt install -y popularity-contest
 apt install -y cups rsync
 ## Niche applications
 # apt install -y # sanoid
+
+##########################################################################################
+## HIBERNATION                                                                          ##
+##########################################################################################
+
+#TODO
+##
+## enable hibernation
+## but before hibernation happens, we create a new sparse zvol with compression enabled
+## we put a sparse swap partition on that zvol equal to total consumed RAM
+## we set its priority to the absolute max
+## then we hibernate
+##
+## initramfs needs then to unhibernate from this zvol
+## then delete the zvol
+##
+## at the end of normal boots, we should look for and delete the zvol, just in case something goes wrong and the hibernation fails mid-way through
+##
+## NUT needs to be configured to trigger hibernation when UPS battery is low.
 
 ##########################################################################################
 ## NETWORKING                                                                           ##
