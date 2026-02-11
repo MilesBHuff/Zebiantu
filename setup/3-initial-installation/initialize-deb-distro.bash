@@ -77,23 +77,19 @@ if [[ $DISTRO -eq 1 ]]
     else debootstrap "$UBUNTU_VERSION" "$TARGET" 'https://archive.ubuntu.com/ubuntu'
 fi
 
-## Clone files whose paths are the same in both the host and the chroot
-echo ':: Cloning files from the host system...'
-declare -a FILES=(
-    'etc/zfs/zpool.cache'
-    "etc/zfs/keys/$ENV_POOL_NAME_OS.key"
-    'etc/hostid' ## ZFS keeps track of the host that imported it in its cachefile, so we need to keep the same hostid as the LiveCD.
-)
-for FILE in "${FILES[@]}"; do
-    mkdir -p "$(dirname -- "$FILE")"
-    [[ -e "/$FILE" ]] && install "/$FILE" "$FILE" || echo "WARN: '/$FILE' does not exist!" >&2
+## Replicate certain core files from the host system
+echo ':: Seeding the configuration...'
+install -d  -m 755 '/etc/zfs'                         "$TARGET/etc/zfs"
+install     -m 644 '/etc/zfs/zpool.cache'             "$TARGET/etc/zfs/zpool.cache"
+install -d  -m 700 '/etc/zfs/keys'                    "$TARGET/etc/zfs/keys"
+for KEYFILE in '/etc/zfs/keys/'*; do
+    install -m 600 "$KEYFILE"                         "$TARGET/etc/zfs/keys/"
 done
-unset FILES
-## Clone files whose paths differ between host and chroot
-install -m 755 "$ROOT_DIR/filesystem-env.sh"      "$TARGET$ENV_FILESYSTEM_ENVFILE"; export ENV_FILESYSTEM_ENVFILE
-install -m 755 "$ROOT_DIR/setup-env.sh"           "$TARGET$ENV_SETUP_ENVFILE";      export ENV_SETUP_ENVFILE
-install -m 755 "$ROOT_DIR/settings/tune-io.dash"  "$TARGET$ENV_TUNE_IO_SCRIPT";     export ENV_TUNE_IO_SCRIPT
-install -m 755 "$ROOT_DIR/settings/tune-zfs.bash" "$TARGET$ENV_TUNE_ZFS_SCRIPT";    export ENV_TUNE_ZFS_SCRIPT
+install     -m 644 '/etc/hostid'                      "$TARGET/etc/hostid" ## ZFS keeps track of the host that imported it in its cachefile, so we need to keep the same hostid as the LiveCD.
+install -D  -m 755 "$ROOT_DIR/filesystem-env.sh"      "$TARGET$ENV_FILESYSTEM_ENVFILE"; export ENV_FILESYSTEM_ENVFILE
+install -D  -m 755 "$ROOT_DIR/setup-env.sh"           "$TARGET$ENV_SETUP_ENVFILE";      export ENV_SETUP_ENVFILE
+install -D  -m 755 "$ROOT_DIR/settings/tune-io.dash"  "$TARGET$ENV_TUNE_IO_SCRIPT";     export ENV_TUNE_IO_SCRIPT
+install -D  -m 755 "$ROOT_DIR/settings/tune-zfs.bash" "$TARGET$ENV_TUNE_ZFS_SCRIPT";    export ENV_TUNE_ZFS_SCRIPT
 
 #####################
 ##   C H R O O T   ##
