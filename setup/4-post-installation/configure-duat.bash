@@ -64,6 +64,9 @@ KERNEL_COMMANDLINE="$(xargs < "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt")"
 ##   I N I T I A L   C O N F I G   ##
 #####################################
 
+echo ':: Installing base system...'
+apt install -y ubuntu-server
+
 echo ':: Switching to NetworkManager from networkd...'
 apt install -y networkmanager ## Just to be safe; should have already installed with the above.
 mkdir -p /etc/netplan ## Just to be safe.

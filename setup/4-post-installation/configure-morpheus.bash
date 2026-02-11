@@ -53,7 +53,8 @@ KERNEL_COMMANDLINE="$(xargs < "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt")"
 ##   I N I T I A L   C O N F I G   ##
 #####################################
 
-echo ':: Installing DE...'
+echo ':: Installing base system...'
+apt install -y ubuntu-server
 apt install -y ubuntu-desktop-minimal
 
 echo ':: Disable DE by default...'

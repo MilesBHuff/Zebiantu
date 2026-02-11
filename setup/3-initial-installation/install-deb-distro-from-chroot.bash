@@ -117,13 +117,6 @@ dpkg-reconfigure -plow unattended-upgrades
 ##   I N S T A L L   F U N D A M E N T A L   P A C K A G E S   ##
 #################################################################
 
-echo ':: Installing base system...'
-case "$HOSTNAME" in
-    'aetherius') ;;
-    'morpheus'|'duat') apt install -y ubuntu-server ;;
-    *) echo "WARN: Unsupported hostname: '$HOSTNAME'" ;;
-esac
-
 ## Install build tools
 echo ':: Installing build tools...'
 apt install -y build-essential pkg-config
