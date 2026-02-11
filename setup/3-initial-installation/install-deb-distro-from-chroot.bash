@@ -579,21 +579,27 @@ if efi-readvar -v PK | grep -q 'No PK present'; then
     install -m 700 -d 'key'
     apt install -y sbsigntool efitools openssl
     declare -i TTL=3650
-    declare -a ALG_PARAMS=()
-    ALG_CLASS='rsa'
-    case "$ALG_CLASS" in
-        rsa)  ALG_PARAMS=('-newkey' 'rsa:3072') ;; ## RSA-3072 is comparable to 128 symmetrical.
-        pkey) ALG_PARAMS=('-newkey' 'ec' '-pkeyopt' 'ec_paramgen_curve:prime256v1' '-pkeyopt' 'ec_param_enc:named_curve') ;; ## NIST P-256 is comparable to 128 symmetrical.
+    declare -a SB_ALG_PARAMS=()
+    ## SecureBoot supports RSA-2048, RSA-3072, RSA-4096, NIST P-256, and NIST P-384. (https://uefi.org/specs/UEFI/2.10/32_Secure_Boot_and_Driver_Signing.html)
+    ## The Linux kernel supports modules signed with RSA-4096 (this is tunable) and NIST P-384. (https://docs.kernel.org/admin-guide/module-signing.html).
+    ## We are using the same keys to handle both scenarios, so we are restricted to using only those algorithms which are supported by both the kernel and by SecureBoot.
+    ## The two overlapping algorithms are RSA-4096 and NIST P-384. Of these, NIST P-384 has much greater security, usually greater performance, and significantly less disk usage. Therefore, it is the technically superior choice.
+    ## For hashing, the strongest algorithm supported by the kernel and SecureBoot is SHA-384.
+    ## Unfortunately, not every SecureBoot implementation actually fully meets the spec; accordingly, I have provided a way to do RSA-2048 and SHA-256 as well, since these are universally implemented.
+    SB_ALG_CLASS='modern'
+    case "$SB_ALG_CLASS" in
+        modern) SB_ALG_PARAMS=('-newkey' 'ec' '-pkeyopt' 'ec_paramgen_curve:prime384v1' '-pkeyopt' 'ec_param_enc:named_curve' '-sha384') ;;
+        legacy) SB_ALG_PARAMS=('-newkey' 'rsa:2048' '-sha256') ;;
         *) exit 10
     esac
     declare -a CERTS=('PK' 'KEK' 'db')
     for CERT in "${CERTS[@]}"; do
         uuidgen > "uuid/$CERT.uuid"
-        openssl req -new -x509 "${ALG_PARAMS[@]}" -sha256 -nodes -days $TTL -keyout "key/$CERT.key"  -out "crt/$CERT.crt"  -subj "/CN=$CERT/"
+        openssl req -new -x509 "${SB_ALG_PARAMS[@]}" -nodes -days $TTL -keyout "key/$CERT.key"  -out "crt/$CERT.crt"  -subj "/CN=$CERT/"
         chmod 0600 "key/$CERT.key"
         cert-to-efi-sig-list -g "$(cat "uuid/$CERT.uuid")" "crt/$CERT.crt"  "esl/$CERT.esl"
     done
-    unset ALG_CLASS ALG_PARAMS TTL
+    unset SB_ALG_CLASS SB_ALG_PARAMS TTL
     sign-efi-sig-list -k "key/PK.key"  -c "crt/PK.crt"  PK  "esl/PK.esl"  "auth/PK.auth"
     sign-efi-sig-list -k "key/PK.key"  -c "crt/PK.crt"  KEK "esl/KEK.esl" "auth/KEK.auth"
     sign-efi-sig-list -k "key/KEK.key" -c "crt/KEK.crt" db  "esl/db.esl"  "auth/db.auth"
