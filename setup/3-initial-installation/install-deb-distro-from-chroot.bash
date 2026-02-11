@@ -561,6 +561,8 @@ echo 'UMASK=0077' > /etc/initramfs-tools/conf.d/umask.conf
 echo "FILES=\"$KEYDIR/*\"" > /etc/initramfs-tools/conf.d/99-zfs-keys.conf
 unset KEYDIR KEYFILE
 
+#TODO: Make ZBM host a dropbear ssh service, to enable manual remote unlocks. Ideally, this only starts when unlocking fails.
+
 #############################
 ##   S E C U R E B O O T   ##
 #############################
@@ -656,8 +658,6 @@ EOF
 generate-zbm
 sbverify --list /boot/esp/EFI/ZBM/*.EFI
 sbverify --list /boot/esp/EFI/BOOT/BOOTX64.EFI
-
-#TODO: Make ZBM host a dropbear ssh service, to enable manual remote unlocks. Ideally, this only starts when unlocking fails.
 
 #########################
 ##   P A C K A G E S   ##
