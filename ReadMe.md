@@ -53,7 +53,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `sysctl`: Various sysctl tweaks. Improves security, reduces logspam, and improves I/O performance.
         * `commandline`: Configures the kernel commandline, taking care to organize and deduplicate the arguments provided by the other modules.
 
-*† (Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.)*
+*† (Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: in-kernel) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.)*
 
 #### post-installation + conversion
 Scripts that tailor an initial install to a specific machine and use-case. At present, there are three:
