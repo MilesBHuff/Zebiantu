@@ -7,6 +7,11 @@ Why go to such lengths? Well, a number of core reasons:
 
 ## Directories
 
+### .
+Repo meta. Of particular note are the two environment files:
+* `filesystem-env`: Variables relating to disks and filesystems (mostly ZFS)
+* `setup-env`: Variables relating to the setup process
+
 ### settings
 Scripts that apply settings.
 * `tune-io`: This script can be run manually or via udev rule. It helps ensure that various settings, mainly queue depth, is set optimally per the characteristics of each disk, and in consideration of the ZFS configuration.
