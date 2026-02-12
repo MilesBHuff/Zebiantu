@@ -64,6 +64,7 @@ case "$HOW_TO_REPLICATE" in
         unset SNAPSHOT SNAPSHOT_NEW SNAPSHOT_OLD
         ;;
 esac
+#TODO: I've heard `mbuffer` can be useful when piped between `send` and `receive`; I need to look into this claim.
 
 ## Unlock the replicated dataset
 zfs load-key -r "$OUT_DS"
