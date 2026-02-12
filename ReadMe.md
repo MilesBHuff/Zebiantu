@@ -6,6 +6,10 @@ Why go to such lengths? Well, a number of core reasons:
 * The stock distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure. Yet, there is no reason for them to be: ZFSBootMenu allows encrypted root-on-ZFS (`/boot` included), UEFI allows exclusively using your own custom keys instead of Microsoft's, and TPM auto-unlocking exists and can be used if appropriate.
 * A setup that is not scripted is a setup that is not documented or reproducible. There are so many things that need configuring when you are earnestly setting up a ZFS-based system that it would be foolish to proceed without scripting it.
 
+## Dependencies
+* Zebiantu is designed to utilize either Debian 13 "Trixie" or Ubuntu 24.04 "Noble Numbat" as its base.
+* Zebiantu is built around ZFS 2.3. It will be reworked to support ZFS 2.4 once all existing WIPs have been addressed.
+
 ## Directories
 
 ### .
