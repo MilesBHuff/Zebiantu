@@ -242,7 +242,7 @@ swap-priority = 32767
 ## Yes, this should generate and mount before anything needs it.
 # mount-point = /foo
 EOF
-systemctl daemon-reload
+# systemctl daemon-reload ## Shouldn't run from chroot.
 # systemctl start systemd-zram-setup@zram0 ## Shouldn't start/stop from chroot.
 
 ## Configure `/tmp` as tmpfs
@@ -261,7 +261,7 @@ cat > /etc/systemd/system/console-setup.service.d/override.conf <<'EOF' #BUG: Re
 # Requires=tmp.mount
 After=tmp.mount
 EOF
-systemctl daemon-reload
+# systemctl daemon-reload ## Shouldn't run from chroot.
 ## Because swap is now in memory, the kernel's usual assumption that swap is slow has been made false. We need to let the kernel know.
 idempotent_append 'vm.swappiness=134' '/etc/sysctl.d/62-io-tweakable.conf' ## This value is a preference ratio of 2:1::cache:anon, which is the inverse of the default 1:2::cache:anon ratio.
 
@@ -336,8 +336,8 @@ TimeoutSec=30
 [Install]
 WantedBy=multi-user.target
 EOF
-# systemctl daemon-reload
-# systemctl enable "$TUNE_ZFS_SERVICE" #NOTE: Not starting now, since we're in a chroot.
+# systemctl daemon-reload ## Shouldn't run from chroot.
+# systemctl enable "$TUNE_ZFS_SERVICE" #NOTE: No `--now` because we're in a chroot.
 unset TUNE_ZFS_SERVICE
 
 ## Tune I/O
@@ -356,7 +356,7 @@ TimeoutSec=10
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable "$TUNE_IO_SERVICE" #NOTE: Not starting now, since we're in a chroot.
+systemctl enable "$TUNE_IO_SERVICE" #NOTE: No `--now` because we're in a chroot.
 cat > /etc/udev/rules.d/90-tune-io.rules <<EOF
 ACTION=="add|change", SUBSYSTEM=="block", DEVTYPE=="disk", ENV{DEVNAME}!="", RUN+="/bin/systemctl start --no-block $TUNE_IO_SERVICE"
 EOF
@@ -1003,7 +1003,7 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOF
-sudo systemctl daemon-reload
+# systemctl daemon-reload ## Shouldn't run from chroot.
 
 ## The idea is that VMs' serial consoles can own all TTYs higher than 10.
 
