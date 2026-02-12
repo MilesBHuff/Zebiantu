@@ -2,7 +2,7 @@
 This repo contains a series of scripts that install Debian/Ubuntu and configure it to meet my needs. The divergence is sufficiently great that this constitutes a custom spin of those distros, one I am terming "Zebiantu" — a blend of "**Z**FS", "D**ebia**n", and "Ubu**ntu**".
 
 Why go to such lengths? Well, a number of core reasons:
-* Ubuntu and multiple Debian derivatives have first-class in-the-kernel ZFS support, and nothing else does. I want Linux and I want ZFS; this effectively pigeonholes me here.
+* Ubuntu and multiple Debian derivatives have first-class ZFS support, and nothing else does. I want Linux and I want ZFS; this effectively pigeonholes me here.
 * The stock distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure. Yet, there is no reason for them to be: ZFSBootMenu allows encrypted root-on-ZFS (`/boot` included), UEFI allows exclusively using your own custom keys instead of Microsoft's, and TPM auto-unlocking exists and can be used if appropriate.
 * A setup that is not scripted is a setup that is not documented or reproducible. There are so many things that need configuring when you are earnestly setting up a ZFS-based system that it would be foolish to proceed without scripting it.
 
@@ -70,7 +70,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `sysctl`: Various sysctl tweaks. Improves security, reduces logspam, and improves I/O performance.
         * `commandline`: Configures the kernel commandline, taking care to organize and deduplicate the arguments provided by the other modules.
 
-*† (Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: in-kernel) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.)*
+*† Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.*
 
 #### post-installation
 Scripts that tailor an initial install to a specific machine and use-case. At present, there are three:
