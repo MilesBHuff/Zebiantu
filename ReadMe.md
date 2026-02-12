@@ -62,7 +62,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
 
 *† (Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: in-kernel) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.)*
 
-#### post-installation + conversion
+#### post-installation
 Scripts that tailor an initial install to a specific machine and use-case. At present, there are three:
 * `configure-aetherius`: For my NAS + home server.
     * Installs various necessary applications
