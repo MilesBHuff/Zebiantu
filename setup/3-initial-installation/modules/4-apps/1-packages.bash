@@ -21,7 +21,7 @@ echo ':: Installing firmware, drivers, and tools...'
 apt install -y firmware-linux-free firmware-linux-nonfree firmware-misc-nonfree
 ## General firmware tools
 apt install -y fwupd iasl
-## General hardware tools
+## General tools
 KVER=$(ls /lib/modules | sort -V | tail -n1) #NOTE: Can't use `uname -r` since that'd be the LiveCD's kernel.
 apt install -y \
     linux-tools-common \
@@ -31,11 +31,14 @@ apt install -y \
     dmsetup \
     ethtool \
     fancontrol \
+    file \
+    gdb \
     hdparm \
     i2c-tools \
     iotop \
     lm-sensors \
     lshw \
+    ltrace \
     mesa-utils \
     net-tools \
     numactl \
@@ -46,6 +49,7 @@ apt install -y \
     psmisc \
     read-edid \
     smartmontools \
+    strace \
     sysstat \
     tpm2-tools \
     usbutils
@@ -58,6 +62,6 @@ echo ':: Installing applications...'
 [[ $DISTRO -eq 1 ]] && tasksel --new-install
 apt install -y popularity-contest
 ## Common applications
-apt install -y cups rsync
+apt install -y cups rsync debsums
 ## Niche applications
 # apt install -y # sanoid
