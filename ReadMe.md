@@ -34,7 +34,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `zfs`: Configures the system to utilize ZFS.
         * `fs`: Configures the system to utilize additional filesystems.
         * `maintenance`: [WIP] Configures periodic trim, scrub, SMART, etc.
-        * `shapshots`: [WIP] Configures regularly taking and pruning snapshots. **Retention is per the Tower of Hanoi.**
+        * `snapshots`: [WIP] Configures regularly taking and pruning snapshots. **Retention is per the Tower of Hanoi.**
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
         * `fsh`: Modifies the system's filesystem hierarchy to maximize the utility of ZFS's snapshots.
         * `mem-fs`: Sets up various memory-based filesystems, like `/tmp` and swap. **Configures zswap as a lightly-compressed hot cache and zram swap as a moderately-compressed cold cache.**
