@@ -31,7 +31,8 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `networking`: Configures networking.
         * `config`: Various mostly-interactive system configurations — the typical stuff you deal with when installing a new operating system.
     * `fs`: Configure filesystems.
-        * `zsh`: Configures the system to utilize ZFS.
+        * `zfs`: Configures the system to utilize ZFS.
+        * `fs`: Configures the system to utilize additional filesystems.
         * `maintenance`: [WIP] Configures periodic trim, scrub, SMART, etc.
         * `shapshots`: [WIP] Configures regularly taking and pruning snapshots. Retention is per the Tower of Hanoi.
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.

@@ -68,8 +68,10 @@ systemctl enable nut-server
 systemctl enable nut-monitor
 ## Drivers
 apt install -y amd64-microcode firmware-amd-graphics firmware-mellanox firmware-realtek
+## Filesystems
+apt install -y btrfs-progs e2fsprogs ntfs-3g
 ## Tools
-apt install -y ipmitool openseachest
+apt install -y ipmitool openseachest photorec testdisk wipefs
 ## Controllers
 apt install -y -t "$DEBIAN_VERSION-backports" openrgb
 
