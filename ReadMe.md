@@ -1,5 +1,5 @@
 # Zebiantu — a `.deb` distro spin
-This repo contains a series of scripts that install Debian/Ubuntu and configure it to meet my needs. The divergence is sufficiently great that this constitutes a custom spin of those distros, one I am terming "Zebiantu" — a blend of "**Z**FS", "D**ebia**n", and "Ubu**ntu**".
+This repo contains a series of scripts that install Debian/Ubuntu and configure it to meet my needs. The divergence is sufficiently great that this constitutes a custom spin of those distros, one I am terming "Zebiantu" — a blend of "<u>Z</u>FS", "D<u>ebia</u>n", and "Ubu<u>ntu</u>".
 
 Why go to such lengths? Well, a number of core reasons:
 * Ubuntu and multiple Debian derivatives have first-class ZFS support, and nothing else does. I want Linux and I want ZFS; this effectively pigeonholes me here.
