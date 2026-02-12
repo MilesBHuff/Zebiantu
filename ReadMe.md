@@ -34,15 +34,15 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `zfs`: Configures the system to utilize ZFS.
         * `fs`: Configures the system to utilize additional filesystems.
         * `maintenance`: [WIP] Configures periodic trim, scrub, SMART, etc.
-        * `shapshots`: [WIP] Configures regularly taking and pruning snapshots. Retention is per the Tower of Hanoi.
+        * `shapshots`: [WIP] Configures regularly taking and pruning snapshots. **Retention is per the Tower of Hanoi.**
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
         * `fsh`: Modifies the system's filesystem hierarchy to maximize the utility of ZFS's snapshots.
-        * `mem-fs`: Sets up various memory-based filesystems, like `/tmp` and swap. Configures zswap as a lightly-compressed hot cache and zram swap as a moderately-compressed cold cache.
+        * `mem-fs`: Sets up various memory-based filesystems, like `/tmp` and swap. **Configures zswap as a lightly-compressed hot cache and zram swap as a moderately-compressed cold cache.**
     * `boot`: Configure the boot chain. The end-result is strongly resistant to Evil-Maid attacks, and the overall architecture is much-more-elegant than anything shipping today (early 2026). And because it's based around ZFSBootMenu, it is easy to recover from any issues: Just put a vanilla ZBM image on a flash drive, temporarily disable SecureBoot, manually type your password, and fix the issue.
-        * **`esp-with-zbm.bash`: Sets up an ESP containing a custom ZFSBootMenu image that unlocks a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
-        * **`secureboot-with-zbm.bash`: Sets up SecureBoot using ONLY self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
-        * **`tpm-autounlock-with-zbm.bash`: [optional] Sets up TPM auto-unlocking for ZFSBootMenu+SecureBoot.** (Only used on the edge router.)
-        * **`hibernation`: [WIP] Allows hibernation by way of temporary swap zvol.**
+        * `esp-with-zbm.bash`: Sets up an ESP containing a custom ZFSBootMenu image that unlocks **a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
+        * `secureboot-with-zbm.bash`: **Sets up SecureBoot using ONLY self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
+        * `tpm-autounlock-with-zbm.bash`: [optional] **Sets up TPM auto-unlocking for ZFSBootMenu+SecureBoot.** (Only used on the edge router.)
+        * `hibernation`: [WIP] **Allows hibernation by way of temporary swap zvol.**
     * `apps`: Add and configure various applications.
         * `packages`: Install all sorts of things that the system will need.
         * `time`: [WIP] Configure the system's time daemon.
