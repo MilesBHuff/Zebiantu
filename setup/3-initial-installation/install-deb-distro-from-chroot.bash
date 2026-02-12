@@ -6,7 +6,7 @@ function helptext {
     echo 'This is a one-shot script that finishes setting up Debian or Ubuntu in a chroot.'
     echo 'WARN: Although this is intended as a one-shot script, it *should* be more-or-less idempotent; just try to maintain consistent user responses between runs.'
     echo
-    echo 'You should have SecureBoot enabled, in Setup Mode (PK cleared), and not enforcing.'
+    echo 'You must have SecureBoot enabled in Setup Mode (PK cleared, not enforcing), and the live system must be booted in UEFI mode.'
 }
 ## Special thanks to https://openzfs.github.io/openzfs-docs/Getting%20Started/Debian/Debian%20Bookworm%20Root%20on%20ZFS.html
 ## Special thanks to ChatGPT for helping with my endless questions.
