@@ -1,5 +1,5 @@
 # Milex — a `.deb` distro spin
-This repo contains a series of scripts that install Debian/Ubuntu and configure it to meet my needs. The divergence is so great that this constitutes a custom spin of those distros, one I am terming "Milex".
+This repo contains a series of scripts that install Debian/Ubuntu and configure it to meet my needs. The divergence is sufficiently great that this constitutes a custom spin of those distros, one I am terming "Milex".
 Why go to such lengths? Well, a number of core reasons:
 * Ubuntu and multiple Debian derivatives have first-class in-the-kernel ZFS support, and nothing else does. I want Linux and I want ZFS; this effectively pigeonholes me here.
 * The stock distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure. Yet, there is no reason for them to be: ZFSBootMenu allows encrypted root-on-ZFS (`/boot` included), UEFI allows exclusively using your own custom keys instead of Microsoft's, and TPM auto-unlocking exists and can be used if appropriate.
