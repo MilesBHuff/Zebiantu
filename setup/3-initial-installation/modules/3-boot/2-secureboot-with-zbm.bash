@@ -116,7 +116,6 @@ if efi-readvar -v PK | grep -q 'No PK present'; then
     openssl verify 'crt/db.crt' \
         -CAfile    'crt/PK.crt' \
         -untrusted 'crt/KEK.crt'
-
     ## Cleanup
     unset SB_TTL_DAYS SB_DIGEST_PARAM
 
