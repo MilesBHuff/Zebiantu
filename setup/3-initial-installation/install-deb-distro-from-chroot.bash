@@ -802,7 +802,7 @@ After=tmp.mount
 EOF
 # systemctl daemon-reload ## Shouldn't run from chroot.
 ## Because swap is now in memory, the kernel's usual assumption that swap is slow has been made false. We need to let the kernel know.
-idempotent_append 'vm.swappiness=134' '/etc/sysctl.d/62-io-tweakable.conf' ## This value is a preference ratio of 2:1::cache:anon, which is the inverse of the default 1:2::cache:anon ratio.
+idempotent_append 'vm.swappiness=98' '/etc/sysctl.d/62-io-tweakable.conf' ## This value is out of 200, and must be an even number. `100` tells the kernel that swapping anonymous pages and disk cache is equally expensive. `98` is basically the same thing, but tie-breaks in favor of anonymous pages.
 
 ###############################
 ##   H I B E R N A T I O N   ##
