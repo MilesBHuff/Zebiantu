@@ -126,6 +126,8 @@ esac
 echo "options zfs zfs_txg_timeout=$ENV_SECONDS_DATA_LOSS_ACCEPTABLE" >> "$FILE"
 #echo "options zfs zfs_dirty_data_max=$(($ENV_SECONDS_DATA_LOSS_ACCEPTABLE * ($ENV_SPEED_MBPS_MAX_SLOWEST_HDD * (1024**2))))" >> "$FILE" ## Sanity check: Default is 4294967296 (4GiB) #NOTE: This is already auto-tuned every few seconds to accomplish the same goal.
 #echo "options zfs zfs_dirty_data_max_max=$(($ENV_SECONDS_DATA_LOSS_ACCEPTABLE * ($ENV_SPEED_MBPS_MAX_THEORETICAL_HDD * (1024**2))))" >> "$FILE" ## Sanity check: Default is 4294967296 (4GiB) ## This is necessary to avoid a situation where you have more in your TXGs than your drives can physically eat in your timeout. There is no reason to allow this. #NOTE: This can only be configured at module load.
+## During startup, using saved metadata, re-find the stuff stored to the L2ARC device from the last boot.
+options zfs l2arc_rebuild_enabled=1
 ## L2ARC Throttling
 echo "options zfs l2arc_write_max=$((ENV_DEVICES_IN_L2ARC * ((ENV_ENDURANCE_L2ARC * (1024**4)) / (ENV_MTBF_TARGET_L2ARC * (3652425 / 10000) * 24 * 60 * 60))))" >> "$FILE" ## Sets the L2ARC feed rate to the value that kills the L2ARC device at the appointed time. The default is 8M; this sets it to 2M on a consumer NVMe or 87M on an enterprise one.
 echo "options zfs l2arc_write_boost=$((ENV_DEVICES_IN_L2ARC * ((ENV_SPEED_L2ARC * (1024**2)) / 2)))" >> "$FILE" ## Sets the temporary fill rate of L2ARC to half its speed.
