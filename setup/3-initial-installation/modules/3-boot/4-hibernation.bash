@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 ##
 ## **Requirements:**
-## You must be on a kernel that supports zswap, zram swap, and zram writeback.
-## You must have swap and zram swap enabled.
+## You must be on a kernel that supports zram swap and zram writeback.
+## You must use zram swap as your sole source of swap.
 ## You must be using encrypted ZFS for your operating system's root.
 ##
 ## **Overview:**
@@ -48,8 +48,7 @@
 ## Set a hard quota on the OS zpool equal to the total amount of installed RAM.
 ## This naïve 1:1 reservation guarantees solvency because:
 ## * zram swap is drained from zstd-2 to zstd-2 (the same algorithm).
-## * zswap is drained from lz4 to zstd-2 (a stronger algorithm).
-## * The rest of RAM is hibernated from uncompressed to kernel compression (a stronger algorithm).
+## * The rest of RAM is hibernated from a mix of uncompressed and lz4-compressed (via zswap) to kernel compression (stronger than uncompressed, the same algorithm as lz4).
 ## * RAM is never at 100% use; the kernel doesn't permit it.
 ##
 ## **Whys:**
