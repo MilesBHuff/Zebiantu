@@ -49,8 +49,42 @@ swap-priority = 32767
 EOF
 # systemctl daemon-reload ## Shouldn't run from chroot.
 # systemctl start systemd-zram-setup@zram0 ## Shouldn't start/stop from chroot.
-## Because swap is now in memory, the kernel's usual assumption that swap is slow has been made false. We need to let the kernel know.
-idempotent_append 'vm.swappiness=98' '/etc/sysctl.d/62-io-tweakable.conf' ## This value is out of 200, and must be an even number. `100` tells the kernel that swapping anonymous pages and disk cache is equally expensive. `98` is basically the same thing, but tie-breaks in favor of anonymous pages.
+
+## Tune sysctl to reflect that swap is now in RAM.
+idempotent_append 'vm.page-cluster=0' '/etc/sysctl.d/62-io-tweakable.conf' ## With the high speed of RAM and the CPU cost of zstd compression, readahead actually slows I/O. (https://www.reddit.com/r/Fedora/comments/mzun99/new_zram_tuning_benchmarks)
+##
+## When your main filesystem is ZFS, swappiness is less-important than normal, since ZFS maintains its own cache for most data: the ARC.
+## That said, Linux's page cache is still used for:
+## * `mmap`ped files (ELF binaries, shared libs, etc).
+## * tmpfs and other kernel-managed shared memory.
+## * Non-ZFS filesystems (ESP, external storage, etc).
+## So there is still value in tuning swappiness.
+##
+## Because zram swap means that swap is in memory, the kernel's usual assumption that swap is slow has been made false. We need to let the kernel know.
+## Swappiness encodes a ratio in an integer from 0–200. Lower numbers mean that swap is slower than storage, while higher numbers mean the opposite.
+## On systems composed of just one class of device, you can actually calculate the ideal value for your setup by looking at the ratio of random 4K IOPS in your swap versus in your storage.
+##
+## However, a zpool is not one device, but a tier of them (ARC>L2ARC>svdev/vdev); and the device that contributes most to I/O varies by workload; so there is no single IOPS figure that can be calculated for the entire pool.
+## Also, cache misses behave roughly like a harmonic mean (or so says AI), because even a tiny fraction of HDD hits can utterly wreck the IOPS figure.
+## One might therefore suppose that swappiness ought to be set to match HDDs no matter the speeds of the other tiers, since the HDDs' impacts on IOPS are so outsized.
+##
+## Raw figures, however, can be misleading. On a well-architected pool, most random I/O is metadata and small files (which are on SSDs); this significantly cuts down on random I/O on HDDs, biasing them towards sequential I/O (which is much faster).
+## As well, it seems like the vast majority of Linux's page cache is going to be dominated by the OS pool, which should always be 100% SSDs.
+## Summarily: the impacts of HDD hits may not be as high as contextless figures suggest, and the Linux page cache may not actually have anything from those HDDs.
+## Accordingly, the prior supposition that the swappiness of a zpool should be tuned solely per HDDs could well be false.
+##
+## Ultimately, tuning swappiness without testing it is an art, not a science — I cannot theorize this value into some kind of perfection.
+## But I *can* aim to make a ballpark default that works well-enough for zram swap across a myriad of systems.
+## SATA SSDs have performance characteristics intermediate between those of HDDs and those of NVMes.
+## In a mirror, such as is common for zpools, the effective average concurrency you may suspect should be intermediate between the extremes of 1 drive and all the drives. For a two-way mirror, that's 1.5.
+## Per AI, a figure representative of a typical enterprise-grade SATA SSD for 4K random reads per second is 96K. If we scale that by 1.5 to represent a mirror, we get 144K.
+## Also per AI, a figure representative of a zram swap with zstd compression on a typical computer with DDR4-ECC could be around 700K, based on some online benchmarks; but the exact number varies wildly by hardware and compression level.
+## If we ratio those two, we get an optimal swappiness of 166. Sanity check: that's in-line with other recommendations. Pop!_OS ships with 180, and a kernel.org example used 133.
+##
+## It is important to note that this value is just meant as a general-purpose "probably okay" figure. Your specific hardware (CPU, RAM, storage devices, storage topology) can have wildly different optimums.
+## The algorithm to use is: `200 * ((s / d) / (1 + (s / d)))` (where `s` is "swap IOPS" and `d` is "disk IOPS")
+## You should benchmark 4K random reads per second on your OS pool and on a zram device, using `fio`; then plug those figures into the above formula and use it for your swappiness value.
+idempotent_append 'vm.swappiness=166' '/etc/sysctl.d/62-io-tweakable.conf'
 
 ## Configure `/tmp` as tmpfs
 echo ':: Configuring `/tmp`...'

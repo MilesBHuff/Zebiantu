@@ -188,6 +188,7 @@ EOF
 ## Sysctl
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
+sed -iE           's/^(vm\.swappiness)=[0-9]+$/\1=198/' '/etc/sysctl.d/62-io-tweakable.conf' ## AI-estimated per Aetherius's specific hardware, some moderately-relevant zstd compression benchmarks I ran, and the formula given in `mem-fs.bash`.
 idempotent_append 'kernel.mm.ksm.run=1'                 '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'kernel.mm.ksm.pages_to_scan=100'     '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'kernel.mm.ksm.sleep_millisecs=1000'  '/etc/sysctl.d/62-io-tweakable.conf'

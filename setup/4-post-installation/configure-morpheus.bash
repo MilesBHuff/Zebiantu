@@ -159,6 +159,7 @@ chown -R "$USERNAME" "$AI_DIR"
 echo ':: Configuring sysctl...'
 idempotent_append 'vm.max_map_count=1048576'           '/etc/sysctl.d/99-ai.conf'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
+sed -iE           's/^(vm\.swappiness)=[0-9]+$/\1=84/' '/etc/sysctl.d/62-io-tweakable.conf' ## AI-estimated per Morpheus's specific hardware and the formula given in `mem-fs.bash`.
 idempotent_append 'kernel.mm.ksm.run=0'                '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'kernel.mm.ksm.pages_to_scan=100'    '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'kernel.mm.ksm.sleep_millisecs=1000' '/etc/sysctl.d/62-io-tweakable.conf'
