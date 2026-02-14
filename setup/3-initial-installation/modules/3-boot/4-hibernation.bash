@@ -76,5 +76,17 @@
 ##
 ################################################################################
 
+## Every boot, set a new quota on the OS zpool that guarantees enough room to swap.
+#TODO
+
+## Enable resume functionality in initramfs
+#TODO
+
+## Tell the kernel where to look for resuming from hibernation.
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume='/dev/zvol/$ENV_POOL_NAME_OS/hibervol'"
+
+## Add a script that runs before hibernation.
+#TODO
+
+## Add a script that runs after restore.
 #TODO
