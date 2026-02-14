@@ -2,25 +2,41 @@
 ################################################################################
 ##
 ## **Blockers:**
-## ZFS currently DOES NOT SUPPORT HIBERNATION, even hibernation to swap outside of ZFS.
-## Do not hibernate until support exists!
-##
-################################################################################
+echo 'ZFS currently DOES NOT SUPPORT HIBERNATION, even hibernation to swap outside of ZFS.' >&2
+echo 'It is safe to latently enable hibernation in your configurations, but DO NOT USE IT until ZFS supports it!' >&2
+echo 'Additionally, because of this: the hibernation that this script enables has not been tested.' >&2
+echo 'Proceed at your own risk.' >&2
+echo
 ##
 ## **Requirements:**
-## You must be on a kernel that supports zram.
-## You must use zram swap as your sole source of swap.
-## You must be using encrypted ZFS for your operating system's root.
+## * You must be on a kernel that supports zram.
+## * You must use zram swap as your sole source of swap.
+## * You must be using encrypted ZFS for your operating system's root.
+## All of these are true in this repo.
 ##
 ## **Overview:**
-## Hibernation is a useful but universally overlooked feature in the server space.
-## In the event of a prolonged power-outage, a system connected to a UPS can hibernate instead of powering off.
-## At the end of the outage, this system can then restore to its prior state.
-## This is much faster and much-less-disruptive than a true cold boot.
-## Hibernation is also, obviously, very useful on a laptop: The system can hibernate before the battery dies, thus allowing resumption without a reboot once power is resupplied.
-## That means you no longer ever have to worry about finishing up and closing everything before your laptop dies.
-## That said, it is not appropriate for all situations. On systems with large amounts of RAM, writing/reading it to/from storage may be much slower than shutting down and cold-booting.
-## As well, hibernation can be confusing for some applications; so it should be applied only where it makes sense and where it has been tested and confirmed to not cause problems for a particular workload.
+## 'Hibernation is a useful but universally overlooked feature in the server space:
+## '* In the event of a prolonged power-outage, a system connected to a UPS can hibernate instead of powering off.
+## '  At the end of the outage, this system can then restore to its prior state.
+## '  This can be much faster and much-less-disruptive than a hard reboot.
+## '* Hibernation is also, obviously, very useful on a laptop:
+## '  The system can hibernate before the battery dies, thus allowing resumption without a reboot once power is resupplied.
+## '  That means you no longer ever have to worry about finishing up and closing everything before your laptop dies.
+echo 'Hibernation is not appropriate for all situations:'
+echo '* On systems with large amounts of RAM, hibernation may be slower than shutting down and cold-booting.'
+echo '    * If hibernation takes a particularly long time, your UPS may die before hibernation finishes.'
+echo '* Systems with large RAM may find that the reservation required to support hibernation may eat far too much storage to be worthwhile.'
+echo '    * In extreme cases, it may be physically impossible to make a reservation large-enough to support hibernation.'
+echo '* Hibernation can cause weird issues with some applications, especially in a virtualization context.'
+echo
+echo 'Only use hibernation where it makes sense and where you can test and confirm it does not cause problems for your particular workload.'
+declare -i CONTINUE=-1
+while read -rp 'Enable hibernation? (y/n) ' ANSWER; do
+    case "$ANSWER" in
+        y) CONTINUE=1; break ;;
+        n) CONTINUE=0; break ;;
+    esac
+done
 ##
 ## **Etymology:**
 ## Windows, unlike Linux, properly distinguishes the roles of the on-disk memory cache ("pagefile") and hibernation cache ("hiberfile").
@@ -52,41 +68,95 @@
 ## * If you have a *ton* of RAM, you may not have time to hibernate before your UPS runs out of battery.
 ##
 ################################################################################
-##
-## **Preparation:**
-## Set a hard quota on the OS zpool's root dataset equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
-## Set `resume=` on the kernel commandline.
-## Enable the `resume` hook for initramfs.
-##
-## **Hibernation:**
-## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to the size of total RAM minus free memory, with snapshots disabled, `compression=off`, `sync=always`, `volblocksize=4K`.
-## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
-## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
-## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
-## Trigger `sync` (to free up dirty write caches), then drop unneeded caches (`vm.drop_caches=3`), then wait 5 seconds (an arbitrary figure; heuristically set to be coincident with `vm.dirty_writeback_centisecs`), then compact memory (`vm.compact_memory=1`).
-## * Reducing the contents of RAM before hibernation makes hibernation and restore faster because less data must be written to disk.
-## * Compacting can help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
-## Swapon hiberswap.
-## Run `zpool sync`, then initiate hibernation.
-##
-## **Restoration:**
-## initramfs unlocks the pool.
-## `systemd-hibernate-generator` handles resume.
-## After restoration: swapoff hiberswap, then delete hibervol, then re-enable the protective quota.
-##
-################################################################################
+if [[ $CONTINUE -eq 1 ]]; then
 
-## Every boot, set a new quota on the OS zpool that guarantees enough room to swap.
-#TODO
+    ############################################################################
+    ##
+    ## **Preparation:**
+    ## Set a hard quota on the OS zpool's root dataset equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
+    ## Set `resume=` on the kernel commandline.
+    ## Enable the `resume` hook for initramfs. (Should already be enabled ootb.)
+    ##
+    ############################################################################
 
-## Enable resume functionality in initramfs
-#TODO
+    ## Every boot, set a new quota on the OS zpool that guarantees enough room to swap.
+    NAME='set-quota-for-hibernation'
+    SCRIPT="/usr/local/sbin/$NAME"
+    cat > "$SCRIPT" <<EOF && chmod +x "$SCRIPT"
+#!/bin/sh
+set -eu
+ZPOOL="$ENV_POOL_NAME_OS"
+ZFS_BIN="$(command -v zfs)"
+## Get total size of pool.
+## (Using used+avail instead of raw total, since this factors out deadweight filesystem losses that would have undersized the quota.)
+USED="\$(\$ZFS_BIN get -Hpo value used "\$ZPOOL")"
+AVAIL="\$(\$ZFS_BIN get -Hpo value available "\$ZPOOL")"
+if [ -z "\$USED" -o -z "\$AVAIL" ]; then
+    echo "\$0: Could not read size of \`\$ZPOOL\`." >&2
+    exit 1
+fi
+TOTAL_STORAGE=\$((USED + AVAIL))
+unset USED AVAIL
+## Get total size of RAM.
+TOTAL_RAM="\$(awk '/^MemTotal:/ {print \$2}' /proc/meminfo)" #AI: MemTotal is reported in kB (actually KiB) in /proc/meminfo.
+if [ -z "\$TOTAL_RAM" ]; then
+    echo "\$0: Could not read \`MemTotal\` from \`/proc/meminfo\`." >&2
+    exit 1
+fi
+TOTAL_RAM=\$((TOTAL_RAM * 1024))
+## Calculate the quota.
+QUOTA=\$((TOTAL_STORAGE - TOTAL_RAM))
+unset TOTAL_STORAGE TOTAL_RAM
+## Apply the quota.
+exec "\$ZFS_BIN" set "quota=\$QUOTA" "\$ZPOOL"
+EOF
+    SERVICE="/etc/systemd/system/$NAME.service"
+    cat > "$SERVICE" <<EOF
+[Unit]
+Description=Set a quota on \`$ENV_POOL_NAME_OS\` that ensures the possibility of hibernation.
+DefaultDependencies=no
+Requires=zfs-import.target
+After=zfs-import.target
+ConditionPathExists=/proc/meminfo
+[Service]
+Type=oneshot
+ExecStart=$SCRIPT
+[Install]
+WantedBy=sysinit.target
+EOF
+    systemctl enable "$NAME" #NOTE: No `--now` because we're in a chroot.
+    unset NAME SCRIPT SERVICE
 
-## Tell the kernel where to look for resuming from hibernation.
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume='/dev/zvol/$ENV_POOL_NAME_OS/hibervol'"
+    ## Tell the kernel where to look for resuming from hibernation.
+    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=/dev/zvol/$ENV_POOL_NAME_OS/hibervol"
 
-## Add a script that runs before hibernation.
-#TODO
+    ############################################################################
+    ##
+    ## **Hibernation:**
+    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to the size of total RAM minus free memory, with snapshots disabled, `compression=off`, `sync=always`, `volblocksize=4K`.
+    ## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
+    ## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
+    ## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
+    ## Trigger `sync` (to free up dirty write caches), then drop unneeded caches (`vm.drop_caches=3`), then wait 5 seconds (an arbitrary figure; heuristically set to be coincident with `vm.dirty_writeback_centisecs`), then compact memory (`vm.compact_memory=1`).
+    ## * Reducing the contents of RAM before hibernation makes hibernation and restore faster because less data must be written to disk.
+    ## * Compacting can help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
+    ## Swapon hiberswap.
+    ## Run `zpool sync`, then initiate hibernation.
+    ##
+    ############################################################################
 
-## Add a script that runs after restore.
-#TODO
+    #TODO
+
+    ############################################################################
+    ##
+    ## **Restoration:**
+    ## initramfs unlocks the pool.
+    ## `systemd-hibernate-generator` handles resume.
+    ## After restoration: swapoff hiberswap, then delete hibervol, then re-enable the protective quota.
+    ##
+    ############################################################################
+
+    #TODO
+
+    ############################################################################
+fi
