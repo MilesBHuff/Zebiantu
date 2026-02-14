@@ -125,6 +125,8 @@ These will be implemented once Zebiantu is feature-complete.
 * ZFS 2.4 support
     * `nas-pool` partitioned svdev + SLOG mirror is simplified to a single whole-disk svdev mirror, using the new ZIL-on-svdev feature.
     * Automatic defragmentation: a daemon that periodically checks file fragmentation for files physically located on an HDD, and runs `zfs rewrite` on anything found to have significant fragmentation.
+* dracut vs initramfs
+    * Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same init. Ubuntu made the switch in 25.10, and Debian plans to in 2027. Zebiantu will not support Ubuntu 26.04 until Debian 14 and Proxmox VE 10 have released.
 
 ## License
 Copyright © 2025–2026 Miles Bradley Huff. Licensed publicly per the terms of the GNU General Public License (v3.0 or later).
