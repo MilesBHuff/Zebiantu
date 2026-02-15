@@ -27,3 +27,18 @@ systemctl enable zfstrim.timer
 
 ## Configure SMART
 #TODO
+
+## Add a memory-freeing script.
+echo ':: Adding a way to free memory on-demand...'
+cat > '/usr/local/sbin/clean-memory' <<'EOF' && chmod +x '/usr/local/sbin/clean-memory'
+#!/bin/sh
+set -e
+sync
+echo 3 > /proc/sys/vm/drop_caches
+CEA=$(cat /proc/sys/vm/compact_unevictable_allowed)
+[ "$CEA" -ne 1 ] && echo 1 > /proc/sys/vm/compact_unevictable_allowed
+echo 1 > /proc/sys/vm/compact_memory
+[ "$CEA" -ne 1 ] && echo "$CEA" > /proc/sys/vm/compact_unevictable_allowed
+exit 0
+EOF
+#NOTE: This is used by the hibernation scripts.

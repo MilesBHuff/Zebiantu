@@ -12,7 +12,8 @@ echo
 ## * You must be on a kernel that supports zram.
 ## * You must use zram swap as your sole source of swap.
 ## * You must be using encrypted ZFS for your operating system's root.
-## All of these are true in this repo.
+## * You have the `clean-memory` script.
+## All of the above are true in this repo.
 ##
 ## **Overview:**
 ## 'Hibernation is a useful but universally overlooked feature in the server space:
@@ -139,9 +140,9 @@ EOF
     ## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
     ## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
     ## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
-    ## Trigger `sync` (to free up dirty write caches), then drop unneeded caches (`vm.drop_caches=3`), then wait 5 seconds (an arbitrary figure; heuristically set to be coincident with `vm.dirty_writeback_centisecs`), then compact memory (`vm.compact_memory=1`).
+    ## Run the `clean-memory` script (it drops unneeded caches and compacts memory).
     ## * Reducing the contents of RAM before hibernation makes hibernation and restore faster because less data must be written to disk.
-    ## * Compacting can help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
+    ## * Compacting can *slightly* help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
     ## Swapon hiberswap.
     ## Run `zpool sync`, then initiate hibernation.
     ##
