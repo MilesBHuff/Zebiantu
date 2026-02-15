@@ -69,6 +69,9 @@ done
 ##
 ################################################################################
 if [[ $CONTINUE -eq 1 ]]; then
+    HIBERSWAP_NAME="hiberswap"
+    HIBERVOL_NAME="hibervol"
+    HIBERVOL_LOCATION="$ENV_POOL_NAME_OS/$HIBERVOL_NAME"
 
     ############################################################################
     ##
@@ -80,9 +83,9 @@ if [[ $CONTINUE -eq 1 ]]; then
     ############################################################################
 
     ## Every boot, set a new quota on the OS zpool that guarantees enough room to swap.
-    NAME='set-quota-for-hibernation'
-    SCRIPT="/usr/local/sbin/$NAME"
-    cat > "$SCRIPT" <<EOF && chmod +x "$SCRIPT"
+    PREP_NAME='set-quota-for-hibernation'
+    PREP_SCRIPT="/usr/local/sbin/$PREP_NAME"
+    cat > "$PREP_SCRIPT" <<EOF && chmod +x "$PREP_SCRIPT"
 #!/bin/sh
 set -eu
 ZPOOL="$ENV_POOL_NAME_OS"
@@ -110,8 +113,8 @@ unset TOTAL_STORAGE TOTAL_RAM
 ## Apply the quota.
 exec "\$ZFS_BIN" set "quota=\$QUOTA" "\$ZPOOL"
 EOF
-    SERVICE="/etc/systemd/system/$NAME.service"
-    cat > "$SERVICE" <<EOF
+    PREP_SERVICE="/etc/systemd/system/$PREP_NAME.service"
+    cat > "$PREP_SERVICE" <<EOF
 [Unit]
 Description=Set a quota on \`$ENV_POOL_NAME_OS\` that ensures the possibility of hibernation.
 DefaultDependencies=no
@@ -120,12 +123,11 @@ After=zfs-import.target
 ConditionPathExists=/proc/meminfo
 [Service]
 Type=oneshot
-ExecStart=$SCRIPT
+ExecStart=$PREP_SCRIPT
 [Install]
 WantedBy=sysinit.target
 EOF
-    systemctl enable "$NAME" #NOTE: No `--now` because we're in a chroot.
-    unset NAME SCRIPT SERVICE
+    systemctl enable "$PREP_NAME" #NOTE: No `--now` because we're in a chroot.
 
     ## Tell the kernel where to look for resuming from hibernation.
     KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=/dev/zvol/$ENV_POOL_NAME_OS/hibervol"
@@ -156,7 +158,39 @@ EOF
     ##
     ############################################################################
 
-    #TODO
+    POST_NAME='post-hibernation-cleanup'
+    POST_SCRIPT="/usr/local/sbin/$POST_NAME"
+    cat > "$POST_SCRIPT" <<EOF && chmod +x "$POST_SCRIPT"
+#!/bin/sh
+set -eu
+## Swapoff $HIBERSWAP_NAME
+SWAPOFF_BIN="$(command -v swapoff)"
+"\$SWAPOFF_BIN" "$HIBERSWAP_NAME"
+unset SWAPOFF
+## Destroy $HIBERVOL_NAME
+HIBERVOL="$HIBERVOL_LOCATION"
+ZFS_BIN="$(command -v zfs)"
+"\$ZFS_BIN" list -H -o name "\$HIBERVOL" >/dev/null 2>&1 &&\
+    exec "\$ZFS_BIN" destroy -f "\$HIBERVOL"
+EOF
+    POST_SERVICE="/etc/systemd/system/$POST_NAME.service"
+    cat > "$POST_SERVICE" <<EOF
+[Unit]
+Description=Remove $HIBERVOL_NAME after resume
+DefaultDependencies=no
+Requires=zfs-import.target
+After=zfs-import.target
+Before=$PREP_NAME.service
+ConditionPathExists=!/etc/initrd-release
+[Service]
+Type=oneshot
+ExecStart=$POST_SCRIPT
+[Install]
+WantedBy=sysinit.target
+EOF
+    systemctl enable "$POST_NAME" #NOTE: No `--now` because we're in a chroot.
 
     ############################################################################
+    unset PREP_NAME PREP_SCRIPT PREP_SERVICE
+    unset POST_NAME POST_SCRIPT POST_SERVICE
 fi
