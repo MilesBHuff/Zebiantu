@@ -2,6 +2,9 @@
 #NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 echo ':: Modifying filesystem hierarchy...'
 
+## `/boot` contains sensitive things; it should not be world-readable.
+chmod 700 '/boot'
+
 ## This helps reflect dataset inheritance — filesystem `/root` lives under dataset `/home`.
 if [[ ! -L '/home/root' ]]; then
     [[ ! -d '/root' ]] && mkdir '/root'
