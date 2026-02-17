@@ -5,6 +5,11 @@ echo ':: Assigning TTYs...'
 
 ################################################################################
 
+## The default scrollback is pretty limited; this is more-reasonable.
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE fbcon=scrollback:1024k"
+
+################################################################################
+
 apt install -y btop
 ## Start `btop` on tty 9 — it's a handy-dandy system monitor with history.
 cat > '/etc/systemd/system/btop-on-tty@.service' <<'EOF'
