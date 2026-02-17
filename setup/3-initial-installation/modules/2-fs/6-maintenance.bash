@@ -1,10 +1,12 @@
 ## Configure trim/discard
 echo ':: Scheduling trim...'
 systemctl enable fstrim.timer ## Auto-trims everything in /etc/fstab
+#NOTE: `zfstrim.[service|timer]` were designed to be minimally divergent from `fstrim.[service|timer]`.
 cat > /etc/systemd/system/zfstrim.service <<'EOF'
 [Unit]
 Description=Trim ZFS pools
 After=zfs.target
+ConditionVirtualization=!container
 [Service]
 Type=oneshot
 ExecStart=/usr/sbin/zpool trim -a
@@ -13,10 +15,13 @@ EOF
 cat > /etc/systemd/system/zfstrim.timer <<'EOF'
 [Unit]
 Description=Periodic ZFS trim
+ConditionVirtualization=!container
+ConditionPathExists=!/etc/initrd-release
 [Timer]
-OnCalendar=*-*-* 03:00
+OnCalendar=weekly
+AccuracySec=1h
 Persistent=true
-AccuracySec=1min
+RandomizedDelaySec=6000
 [Install]
 WantedBy=timers.target
 EOF
