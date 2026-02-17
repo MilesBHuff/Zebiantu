@@ -138,8 +138,14 @@ EOF
     ## Tell the kernel where to look for resuming from hibernation.
     KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=$ZVOL_PATH_IN_DEV"
 
-    ## Configure initramfs-tools to use systemd resume after a read-only mountless pool import, and then if there is nothing to resume from re-import the root pool normally.
+    ## Disable classic resume; it loads too early to work with zvols.
+    cat > '/etc/initramfs-tools/conf.d/disable-classic-resume' <<'EOF'
+RESUME=none
+EOF
+
+    ## Configure initramfs-tools to use systemd-resume after a read-only mountless pool import, and then if there is nothing to resume from to re-import the root pool normally.
     #TODO
+    ## This requires writing a script. I think this is maybe a bit much; I'd rather wait until Debian and Ubuntu are using Dracut, since they should then be using systemd-resume ootb.
 
     ############################################################################
     ##
@@ -207,6 +213,9 @@ unset ZFS_BIN ZVOL_PATH_IN_ZPOOL TOTAL_RAM
 unset MKSWAP_BIN
 "\$SWAPON_BIN" -p '-1' "\$ZVOL_PATH_IN_DEV"
 unset SWAPON_BIN ZVOL_PATH_IN_DEV
+
+## Stop any ongoing scrubs/resilvers, out of an abundance of caution.
+"\$ZPOOL_BIN" scrub -s "\$ENV_POOL_NAME_OS" >/dev/null 2>&1 || true
 
 ## Sync I/O and drop unneeded pages
 [ -x "\$CLEAN_MEMORY_BIN" ] && "\$CLEAN_MEMORY_BIN" || true #NOTE: This runs \`sync\` before dropping unneeded caches. This affects only native Linux I/O — *not* ZFS I/O.
