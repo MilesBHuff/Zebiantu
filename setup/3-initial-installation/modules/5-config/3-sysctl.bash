@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io-static.conf
 idempotent_append 'vm.legacy_va_layout=0'            '/etc/sysctl.d/961-io-static.conf'

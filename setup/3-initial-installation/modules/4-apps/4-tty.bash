@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 echo ':: Assigning TTYs...'
 ## The idea is that the host's console runs on TTY10 and all VMs' serial consoles run on TTYs higher than 10.
 ## A system monitor runs on TTY9.

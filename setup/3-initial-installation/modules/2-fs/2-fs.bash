@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 
 ## Make sure we are able to access certain non-ZFS filesystems
 echo ':: Installing additional filesystems...'

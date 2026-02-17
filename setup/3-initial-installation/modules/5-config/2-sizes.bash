@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
+
 ## Disable or (if impossible to disable) adjust various compressions to save CPU (ZFS does compression for us extremely cheaply, and space is very plentiful on the OS drives.)
 echo ':: Tweaking various compression settings...'
 FILE='/etc/initramfs-tools/initramfs.conf'

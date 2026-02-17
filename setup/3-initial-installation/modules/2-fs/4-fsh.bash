@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 echo ':: Modifying filesystem hierarchy...'
 
 ## This helps reflect dataset inheritance — filesystem `/root` lives under dataset `/home`.

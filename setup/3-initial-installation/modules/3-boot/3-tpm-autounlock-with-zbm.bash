@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 ## Set up auto-unlock via TPM.
 ##
 ## The main thing that needs to be done for this is a custom ZBM that contains the sealed key and instructions for how to unseal it. We don't actually have to go through the trouble of storing the sealed key in the initramfs because the system can auto-load the raw key from /etc/zfs/keys after ZBM unlocks it.

@@ -1,4 +1,6 @@
-#NOTE: If you want these to run at a specific time, you must override them in a system-specific install script.
+#!/usr/bin/env bash
+#NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
+#NOTE: If you want these tasks to run at a specific time, you must override them in a system-specific install script.
 
 ## Configure trim/discard
 echo ':: Scheduling trim...'
