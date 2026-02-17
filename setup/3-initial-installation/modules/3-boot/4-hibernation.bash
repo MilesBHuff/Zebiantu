@@ -136,13 +136,14 @@ EOF
     ############################################################################
     ##
     ## **Hibernation:**
-    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to the size of total RAM minus free memory, with snapshots disabled, `compression=off`, `sync=always`, `volblocksize=4K`.
+    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to the size of the quota with snapshots disabled, `compression=off`, `sync=always`, `volblocksize=4K`.
     ## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
     ## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
     ## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
     ## Run the `clean-memory` script (it drops unneeded caches and compacts memory).
     ## * Reducing the contents of RAM before hibernation makes hibernation and restore faster because less data must be written to disk.
     ## * Compacting can *slightly* help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
+    ## * Temporary impacts on performance from this cleanup isn't relevant since the system is going to go down right after, anyway.
     ## Swapon hiberswap.
     ## Run `zpool sync`, then initiate hibernation.
     ##
@@ -167,7 +168,7 @@ set -eu
 ## Swapoff $HIBERSWAP_NAME
 SWAPOFF_BIN="$(command -v swapoff)"
 "\$SWAPOFF_BIN" "$HIBERSWAP_NAME"
-unset SWAPOFF
+unset SWAPOFF_BIN
 ## Destroy $HIBERVOL_NAME
 HIBERVOL="$HIBERVOL_LOCATION"
 ZFS_BIN="$(command -v zfs)"
