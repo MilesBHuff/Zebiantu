@@ -10,8 +10,7 @@ apt install -y btop
 cat > '/etc/systemd/system/btop-on-tty@.service' <<'EOF'
 [Unit]
 Description=Assign TTY%i to `btop`
-Requires=libvirtd.service
-After=getty@tty%i.service libvirtd.service libvirt-guests.service
+After=getty@tty%i.service
 Conflicts=getty@tty%i.service
 [Service]
 TTYPath=/dev/tty%i
