@@ -50,7 +50,7 @@ printf '\033c' > /dev/tty"$TTY" ## Clears the TTY.
 while true; do
     PTS=$(virsh ttyconsole "$VM" 2>/dev/null || true)
     if [ -n "$PTS" ] && [ -e "$PTS" ]; then
-        exec socat "/dev/tty$TTY",raw,echo=0,crnl "$PTS",raw,echo=0
+        exec socat "/dev/tty$TTY",raw,crnl,echo=0,ixon=0,ixoff=0 "$PTS",raw,echo=0
     fi
     sleep 1
 done
