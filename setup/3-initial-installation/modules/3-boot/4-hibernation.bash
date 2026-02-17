@@ -191,8 +191,17 @@ ExecStart=$POST_SCRIPT
 WantedBy=sysinit.target
 EOF
     systemctl enable "$POST_NAME" #NOTE: No `--now` because we're in a chroot.
+    POST_HOOK="/usr/lib/systemd/system-sleep/$PREP_NAME.sh"
+    cat > "$POST_HOOK" <<EOF && chmod +x "$POST_HOOK"
+#!/bin/sh
+case "$1/$2" in
+    post/hibernate)
+        exec "$PREP_SCRIPT"
+        ;;
+esac
+EOF
 
     ############################################################################
     unset PREP_NAME PREP_SCRIPT PREP_SERVICE
-    unset POST_NAME POST_SCRIPT POST_SERVICE
+    unset POST_NAME POST_SCRIPT POST_SERVICE POST_HOOK
 fi
