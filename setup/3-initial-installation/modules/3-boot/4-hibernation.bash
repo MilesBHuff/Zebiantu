@@ -71,16 +71,16 @@ done
 ##
 ################################################################################
 if [[ $CONTINUE -eq 1 ]]; then
-    HIBERSWAP_NAME="hiberswap"
-    HIBERVOL_NAME="hibervol"
-    HIBERVOL_LOCATION="$ENV_POOL_NAME_OS/$HIBERVOL_NAME"
+    SWAP_NAME="hiberswap"
+    ZVOL_NAME="hibervol"
+    ZVOL_LOCATION="$ENV_POOL_NAME_OS/$ZVOL_NAME"
 
     ############################################################################
     ##
     ## **Preparation:**
-    ## Set a hard quota on the OS zpool's root dataset equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
+    ## Set a hard quota on the OS zpool's root dataset that preserves an amount of space equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
     ## Set `resume=` on the kernel commandline.
-    ## Enable the `resume` hook for initramfs. (Should already be enabled ootb.)
+    ## Ensure that initramfs triggers `systemd-hibernate-generator` after pool unlock and import. (TODO: not sure how to check)
     ##
     ############################################################################
 
@@ -90,14 +90,17 @@ if [[ $CONTINUE -eq 1 ]]; then
     cat > "$PREP_SCRIPT" <<EOF && chmod +x "$PREP_SCRIPT"
 #!/bin/sh
 set -eu
-ZPOOL="$ENV_POOL_NAME_OS"
+#WARN: Do not run this on systems without sufficient storage to fit the full contents of RAM!
+ZPOOL_DATASET="$ENV_POOL_NAME_OS" ## All other datasets are children of this, and so should be affected by any quota set here.
 ZFS_BIN="$(command -v zfs)"
+## Remove the current quota, if any.
+"\$ZFS_BIN" set 'quota=off' "\$ZPOOL_DATASET"
 ## Get total size of pool.
 ## (Using used+avail instead of raw total, since this factors out deadweight filesystem losses that would have undersized the quota.)
-USED="\$(\$ZFS_BIN get -Hpo value used "\$ZPOOL")"
-AVAIL="\$(\$ZFS_BIN get -Hpo value available "\$ZPOOL")"
+USED="\$(\$ZFS_BIN get -Hpo value used "\$ZPOOL_DATASET")"
+AVAIL="\$(\$ZFS_BIN get -Hpo value available "\$ZPOOL_DATASET")"
 if [ -z "\$USED" -o -z "\$AVAIL" ]; then
-    echo "\$0: Could not read size of \`\$ZPOOL\`." >&2
+    echo "\$0: Could not read size of \`\$ZPOOL_DATASET\`." >&2
     exit 1
 fi
 TOTAL_STORAGE=\$((USED + AVAIL))
@@ -110,10 +113,10 @@ if [ -z "\$TOTAL_RAM" ]; then
 fi
 TOTAL_RAM=\$((TOTAL_RAM * 1024))
 ## Calculate the quota.
-QUOTA=\$((TOTAL_STORAGE - TOTAL_RAM))
+QUOTA=\$((TOTAL_STORAGE - TOTAL_RAM)) ## No need to guard against negatives — you'd have to ignore multiple warnings and lack common sense to enable a RAM reservation on a system without enough space to comfortably fit the contents of RAM on-disk.
 unset TOTAL_STORAGE TOTAL_RAM
 ## Apply the quota.
-exec "\$ZFS_BIN" set "quota=\$QUOTA" "\$ZPOOL"
+exec "\$ZFS_BIN" set "quota=\$QUOTA" "\$ZPOOL_DATASET"
 EOF
     PREP_SERVICE="/etc/systemd/system/$PREP_NAME.service"
     cat > "$PREP_SERVICE" <<EOF
@@ -125,19 +128,19 @@ After=zfs-import.target
 ConditionPathExists=/proc/meminfo
 [Service]
 Type=oneshot
-ExecStart=$PREP_SCRIPT
+ExecStart=-$PREP_SCRIPT
 [Install]
 WantedBy=sysinit.target
 EOF
     systemctl enable "$PREP_NAME" #NOTE: No `--now` because we're in a chroot.
 
     ## Tell the kernel where to look for resuming from hibernation.
-    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=/dev/zvol/$ENV_POOL_NAME_OS/hibervol"
+    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=LABEL=$SWAP_NAME"
 
     ############################################################################
     ##
     ## **Hibernation:**
-    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to the size of the quota with snapshots disabled, `compression=off`, `sync=always`, `volblocksize=4K`.
+    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to total RAM, with `refreservation=<the amount of RAM that is currently in-use>`, `volblocksize=4K`, `sync=always`, `logbias=throughput`, `primarycache=metadata`, `secondarycache=none`, `compression=off`, `com.sun:auto-snapshot=false`.
     ## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
     ## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
     ## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
@@ -166,12 +169,14 @@ EOF
     cat > "$POST_SCRIPT" <<EOF && chmod +x "$POST_SCRIPT"
 #!/bin/sh
 set -eu
-## Swapoff $HIBERSWAP_NAME
-SWAPOFF_BIN="$(command -v swapoff)"
-"\$SWAPOFF_BIN" "$HIBERSWAP_NAME"
-unset SWAPOFF_BIN
-## Destroy $HIBERVOL_NAME
-HIBERVOL="$HIBERVOL_LOCATION"
+## Swapoff $SWAP_NAME
+if grep -q '$SWAP_NAME' /proc/swaps; then
+    SWAPOFF_BIN="$(command -v swapoff)"
+    "\$SWAPOFF_BIN" -L "$SWAP_NAME"
+    unset SWAPOFF_BIN
+fi
+## Destroy $ZVOL_NAME
+HIBERVOL="$ZVOL_LOCATION"
 ZFS_BIN="$(command -v zfs)"
 "\$ZFS_BIN" list -H -o name "\$HIBERVOL" >/dev/null 2>&1 &&\
     exec "\$ZFS_BIN" destroy -f "\$HIBERVOL"
@@ -179,7 +184,7 @@ EOF
     POST_SERVICE="/etc/systemd/system/$POST_NAME.service"
     cat > "$POST_SERVICE" <<EOF
 [Unit]
-Description=Remove $HIBERVOL_NAME after resume
+Description=Remove $ZVOL_NAME after resume
 DefaultDependencies=no
 Requires=zfs-import.target
 After=zfs-import.target
@@ -187,15 +192,15 @@ Before=$PREP_NAME.service
 ConditionPathExists=!/etc/initrd-release
 [Service]
 Type=oneshot
-ExecStart=$POST_SCRIPT
+ExecStart=-$POST_SCRIPT
 [Install]
 WantedBy=sysinit.target
 EOF
     systemctl enable "$POST_NAME" #NOTE: No `--now` because we're in a chroot.
-    POST_HOOK="/usr/lib/systemd/system-sleep/$PREP_NAME.sh"
+    POST_HOOK="/etc/systemd/system-sleep/$PREP_NAME.sh"
     cat > "$POST_HOOK" <<EOF && chmod +x "$POST_HOOK"
 #!/bin/sh
-case "$1/$2" in
+case "\$1/\$2" in
     post/hibernate)
         exec "$PREP_SCRIPT"
         ;;
