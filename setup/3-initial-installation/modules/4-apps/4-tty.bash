@@ -1,6 +1,33 @@
 #!/usr/bin/env bash
 echo ':: Assigning TTYs...'
 ## The idea is that the host's console runs on TTY10 and all VMs' serial consoles run on TTYs higher than 10.
+## A system monitor runs on TTY9.
+
+################################################################################
+
+## Start `btop` on tty 9 — it's a handy-dandy system monitor with history.
+cat > '/etc/systemd/system/btop-on-tty@.service' <<'EOF'
+[Unit]
+Description=Assign TTY%i to `btop`
+Requires=libvirtd.service
+After=getty@tty%i.service libvirtd.service libvirt-guests.service
+Conflicts=getty@tty%i.service
+[Service]
+TTYPath=/dev/tty%i
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=no
+StandardInput=tty
+StandardOutput=tty
+StandardError=journal
+ExecStart=/usr/bin/btop
+Restart=always
+RestartSec=1
+[Install]
+WantedBy=multi-user.target
+EOF
+# systemctl daemon-reload ## Shouldn't run from chroot.
+systemctl enable btop-on-tty@9.service #NOTE: No `--now` because we're in a chroot.
 
 ################################################################################
 
