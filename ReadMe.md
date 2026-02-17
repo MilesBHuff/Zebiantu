@@ -57,7 +57,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `esp-with-zbm.bash`: Sets up an ESP containing a custom ZFSBootMenu image that unlocks **a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
         * `secureboot-with-zbm.bash`: **Sets up SecureBoot using ONLY self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
         * `tpm-autounlock-with-zbm.bash`: [optional] **Sets up TPM auto-unlocking for ZFSBootMenu+SecureBoot.** (Only used on `duat`, the edge router.)
-        * `hibernation`: [WIP] **Allows hibernation by way of temporary swap zvol.** (Disabled until [ZFS adds explicit support for hibernation](https://github.com/openzfs/zfs/issues/12842).)
+        * `hibernation`: [WIP] **Allows hibernation by way of temporary swap zvol.** (Do not use until [ZFS adds explicit support for hibernation](https://github.com/openzfs/zfs/issues/12842).)
     * `apps`: Add and configure various applications.
         * `packages`: Install all sorts of things that the system will need.
         * `time`: [WIP] Configure the system's time daemon.

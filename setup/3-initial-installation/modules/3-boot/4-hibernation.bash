@@ -71,16 +71,17 @@ done
 ##
 ################################################################################
 if [[ $CONTINUE -eq 1 ]]; then
-    SWAP_NAME="hiberswap"
+    SWAP_LABEL="hiberswap"
     ZVOL_NAME="hibervol"
-    ZVOL_LOCATION="$ENV_POOL_NAME_OS/$ZVOL_NAME"
+    ZVOL_PATH_IN_ZPOOL="$ENV_POOL_NAME_OS/$ZVOL_NAME"
+    ZVOL_PATH_IN_DEV="/dev/zvol/$ZVOL_PATH_IN_ZPOOL"
 
     ############################################################################
     ##
     ## **Preparation:**
     ## Set a hard quota on the OS zpool's root dataset that preserves an amount of space equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
     ## Set `resume=` on the kernel commandline.
-    ## Ensure that initramfs triggers `systemd-hibernate-generator` after pool unlock and import. (TODO: not sure how to check)
+    ## Ensure that initramfs is using systemd resume instead of classic resume, and that `systemd-hibernate-generator` runs *after* pool unlock and a read-only import.
     ##
     ############################################################################
 
@@ -135,12 +136,15 @@ EOF
     systemctl enable "$PREP_NAME" #NOTE: No `--now` because we're in a chroot.
 
     ## Tell the kernel where to look for resuming from hibernation.
-    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=LABEL=$SWAP_NAME"
+    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=$ZVOL_PATH_IN_DEV"
+
+    ## Configure initramfs-tools to use systemd resume after a read-only mountless pool import, and then if there is nothing to resume from re-import the root pool normally.
+    #TODO
 
     ############################################################################
     ##
     ## **Hibernation:**
-    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to total RAM, with `refreservation=<the amount of RAM that is currently in-use>`, `volblocksize=4K`, `sync=always`, `logbias=throughput`, `primarycache=metadata`, `secondarycache=none`, `compression=off`, `com.sun:auto-snapshot=false`.
+    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to total RAM, with `refreservation=<total RAM>`, `volblocksize=4K`, `sync=always`, `logbias=throughput`, `primarycache=metadata`, `secondarycache=none`, `compression=off`, `com.sun:auto-snapshot=false`.
     ## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
     ## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
     ## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
@@ -153,7 +157,75 @@ EOF
     ##
     ############################################################################
 
-    #TODO
+    MAIN_NAME='zfs-hibernate'
+    MAIN_SCRIPT="/usr/local/sbin/$MAIN_NAME"
+    cat > "$MAIN_SCRIPT" <<EOF && chmod +x "$MAIN_SCRIPT"
+#!/bin/sh
+set -eu
+
+CLEAN_MEMORY_BIN='/usr/local/sbin/clean-memory'
+MKSWAP_BIN="$(command -v mkswap)"
+SWAPON_BIN="$(command -v swapon)"
+SYSTEMCTL_BIN="$(command -v systemctl)"
+ZFS_BIN="$(command -v zfs)"
+ZPOOL_BIN="$(command -v zpool)"
+
+SWAP_LABEL="$SWAP_LABEL"
+ZVOL_PATH_IN_ZPOOL="$ZVOL_PATH_IN_ZPOOL"
+ZVOL_PATH_IN_DEV="$ZVOL_PATH_IN_DEV"
+ZPOOL_DATASET="$ENV_POOL_NAME_OS"
+
+## Get total RAM
+TOTAL_RAM="\$(awk '/^MemTotal:/ {print \$2}' /proc/meminfo)"
+if [ -z "\$TOTAL_RAM" ]; then
+    echo "\$0: Unable to determine total RAM." >&2
+    exit 1
+fi
+TOTAL_RAM=\$((TOTAL_RAM * 1024))
+
+## Remove protective quota
+"\$ZFS_BIN" set 'quota=off' "\$ZPOOL_DATASET"
+unset ZPOOL_DATASET
+#NOTE: The quota effectively guarantees we have enough storage to fit TOTAL_RAM onto disk even without compression.
+
+## Create zvol
+"\$ZFS_BIN" create \
+    -V "\$TOTAL_RAM" \
+    -o refreservation="\$TOTAL_RAM" \
+    -b 4K \
+    -o sync=always \
+    -o logbias=throughput \
+    -o primarycache=metadata \
+    -o secondarycache=none \
+    -o compression=off \
+    -o com.sun:auto-snapshot=false \
+    "\$ZVOL_PATH_IN_ZPOOL"
+unset ZFS_BIN ZVOL_PATH_IN_ZPOOL TOTAL_RAM
+
+## Swapify
+"\$MKSWAP_BIN" -L "\$SWAP_LABEL" "\$ZVOL_PATH_IN_DEV"
+unset MKSWAP_BIN
+"\$SWAPON_BIN" -p '-1' "\$ZVOL_PATH_IN_DEV"
+unset SWAPON_BIN ZVOL_PATH_IN_DEV
+
+## Sync I/O and drop unneeded pages
+[ -x "\$CLEAN_MEMORY_BIN" ] && "\$CLEAN_MEMORY_BIN" || true #NOTE: This runs \`sync\` before dropping unneeded caches. This affects only native Linux I/O — *not* ZFS I/O.
+unset CLEAN_MEMORY_BIN
+"\$ZPOOL_BIN" sync
+unset ZPOOL_BIN
+
+## Initiate hibernation.
+exit 0
+EOF
+    MAIN_HOOK="/etc/systemd/system-sleep/99-$MAIN_NAME.sh"
+    cat > "$MAIN_HOOK" <<EOF && chmod +x "$MAIN_HOOK"
+#!/bin/sh
+case "\$1/\$2" in
+    pre/hibernate)
+        exec "$MAIN_SCRIPT"
+        ;;
+esac
+EOF
 
     ############################################################################
     ##
@@ -169,17 +241,22 @@ EOF
     cat > "$POST_SCRIPT" <<EOF && chmod +x "$POST_SCRIPT"
 #!/bin/sh
 set -eu
-## Swapoff $SWAP_NAME
-if grep -q '$SWAP_NAME' /proc/swaps; then
-    SWAPOFF_BIN="$(command -v swapoff)"
-    "\$SWAPOFF_BIN" -L "$SWAP_NAME"
-    unset SWAPOFF_BIN
+if [ -b "$ZVOL_PATH_IN_DEV" ]; then
+
+    ## Swapoff $SWAP_LABEL
+    if grep -q "$ZVOL_NAME" /proc/swaps; then
+        SWAPOFF_BIN="$(command -v swapoff)"
+        "\$SWAPOFF_BIN" -L "$SWAP_LABEL"
+        unset SWAPOFF_BIN
+    fi
+
+    ## Destroy $ZVOL_NAME
+    HIBERVOL="$ZVOL_PATH_IN_ZPOOL"
+    ZFS_BIN="$(command -v zfs)"
+    "\$ZFS_BIN" list -H -o name "\$HIBERVOL" >/dev/null 2>&1 &&\
+        exec "\$ZFS_BIN" destroy -f "\$HIBERVOL"
 fi
-## Destroy $ZVOL_NAME
-HIBERVOL="$ZVOL_LOCATION"
-ZFS_BIN="$(command -v zfs)"
-"\$ZFS_BIN" list -H -o name "\$HIBERVOL" >/dev/null 2>&1 &&\
-    exec "\$ZFS_BIN" destroy -f "\$HIBERVOL"
+exit 0
 EOF
     POST_SERVICE="/etc/systemd/system/$POST_NAME.service"
     cat > "$POST_SERVICE" <<EOF
@@ -197,7 +274,7 @@ ExecStart=-$POST_SCRIPT
 WantedBy=sysinit.target
 EOF
     systemctl enable "$POST_NAME" #NOTE: No `--now` because we're in a chroot.
-    POST_HOOK="/etc/systemd/system-sleep/$PREP_NAME.sh"
+    POST_HOOK="/etc/systemd/system-sleep/00-$PREP_NAME.sh"
     cat > "$POST_HOOK" <<EOF && chmod +x "$POST_HOOK"
 #!/bin/sh
 case "\$1/\$2" in
@@ -209,5 +286,6 @@ EOF
 
     ############################################################################
     unset PREP_NAME PREP_SCRIPT PREP_SERVICE
+    unset MAIN_NAME MAIN_SCRIPT              MAIN_HOOK
     unset POST_NAME POST_SCRIPT POST_SERVICE POST_HOOK
 fi
