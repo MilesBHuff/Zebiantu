@@ -1,3 +1,5 @@
+#NOTE: If you want these to run at a specific time, you must override them in a system-specific install script.
+
 ## Configure trim/discard
 echo ':: Scheduling trim...'
 systemctl enable fstrim.timer ## Auto-trims everything in /etc/fstab
