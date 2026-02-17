@@ -34,6 +34,28 @@ systemctl enable btop-on-tty@9.service #NOTE: No `--now` because we're in a chro
 ## Put the host console at 10.
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE console=tty10"
 
+## Replace it with journald once the system has booted.
+## (journald is a superset of the kernel log, and it's interactive.)
+cat > '/etc/systemd/system/journald-on-tty@.service' <<'EOF'
+[Unit]
+Description=Display journald on tty%i
+After=multi-user.target
+Conflicts=getty@tty%i.service
+[Service]
+TTYPath=/dev/tty%i
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty
+StandardOutput=tty
+StandardError=journal
+ExecStart=/usr/bin/journalctl -ef -b -o short -p notice
+Restart=always
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable journald-on-tty@10.service #NOTE: No `--now` because we're in a chroot.
+
 ################################################################################
 
 ## Script that attaches guest VM consoles to arbitrary TTYs.
