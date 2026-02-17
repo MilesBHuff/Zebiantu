@@ -5,6 +5,7 @@ echo ':: Assigning TTYs...'
 
 ################################################################################
 
+apt install -y btop
 ## Start `btop` on tty 9 — it's a handy-dandy system monitor with history.
 cat > '/etc/systemd/system/btop-on-tty@.service' <<'EOF'
 [Unit]
