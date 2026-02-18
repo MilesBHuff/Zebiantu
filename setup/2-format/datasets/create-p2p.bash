@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: create-torrenting.bash"
+    echo "Usage: create-p2p.bash"
     echo
-    echo 'It is created on the OS pool, as it the NAS pool has dedicated its SSD mirror to metadata+small files, and as the OS pool has a lot of otherwise unused capacity and I/O.'
+    echo 'This dataset is created on the OS pool because it has a lot of otherwise unused capacity + I/O and the NAS pool has dedicated its SSD mirror to metadata + small files + SLOG.'
     echo
     echo 'Warning: This script does not check validity — make sure your pool exists.'
 }
@@ -25,8 +25,8 @@ if [[
 fi
 
 ## Create dataset
-DATASET_NAME="$ENV_POOL_NAME_OS/torrents"
-MOUNTPOINT='/mnt/torrents'
+DATASET_NAME="$ENV_POOL_NAME_OS/data/srv/p2p"
+MOUNTPOINT='/srv/p2p'
 zfs create \
     \
     -o canmount=on \
