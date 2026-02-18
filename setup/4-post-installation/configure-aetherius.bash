@@ -239,6 +239,16 @@ systemctl daemon-reload
 ##   A D D I T I O N A L   C O N F I G U R A T I O N   ##
 #########################################################
 
+## Ensure that the NAS is snapshotted and the backup is not
+cat >> '/etc/sanoid/sanoid.conf' <<EOF
+
+## Backups are controlled by Syncoid, not by Sanoid.
+[$ENV_POOL_NAME_DAS]
+    use_template = none
+[$ENV_POOL_NAME_NAS]
+    use_template = min
+EOF
+
 ## Configure CPU features
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE amd_iommu=on" ## Leaving `iommu=pt` off for security.
 cat > /etc/modprobe.d/kvm-amd.conf <<'EOF'

@@ -49,9 +49,9 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `zfs`: Configures the system to utilize ZFS.
         * `fs`: Configures the system to utilize additional filesystems.
         * `maintenance`: Configures periodic trim, scrub, SMART, etc.
-        * `snapshots`: [WIP] Configures regularly taking and pruning snapshots. **Retention is per the Tower of Hanoi.**
+        * `snapshots`: Configures regularly taking and pruning snapshots with timescales appropriate to workload.
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
-        * `fsh`: Modifies the system's filesystem hierarchy to maximize the utility of ZFS's snapshots.
+        * `fsh`: Tweaks the system's filesystem hierarchy.
         * `mem-fs`: Sets up various memory-based filesystems, like `/tmp` and swap. **Configures zswap as a lightly-compressed hot cache and zram swap as a moderately-compressed cold cache.**
     * `boot`: Configure the boot chain. The end-result is strongly resistant to Evil-Maid attacks, and the overall architecture is much-more-elegant than anything shipping today (early 2026). And because it's based around ZFSBootMenu, it is easy to recover from any issues: Just put a vanilla ZBM image on a flash drive, temporarily disable SecureBoot, manually type your password, and fix the issue.
         * `esp-with-zbm.bash`: Sets up an ESP containing a custom ZFSBootMenu image that unlocks **a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
@@ -79,6 +79,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Sets up the TRNG
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Schedule maintenance tasks for specific times.
+    * Configures non-OS snapshotting.
     * Tweaks some settings.
 * `configure-duat`: For my edge router / firewall.
     * Installs various necessary applications.
