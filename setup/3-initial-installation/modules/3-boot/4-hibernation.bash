@@ -18,7 +18,6 @@ elif [[ command -v 'dracut' || command -v 'systemd-hibernate-resume' ]]; then
     ## **Blockers:**
     echo 'ZFS currently does not officially support hibernation, even hibernation to swap outside of ZFS.' >&2
     echo -e 'It is safe to latently enable hibernation in your configurations, but actually hibernating is \e[1munsupported\e[0m.' >&2
-    echo -e 'Hibernation vis-à-vis this script will not work until Debian and Ubuntu use Dracut.' >&2
     echo -e 'As well: the hibernation that this script enables is, at present, \e[1mcompletely untested\e[0m.' >&2
     echo -e '\e[1mProceed at your own risk!\e[0m' >&2
     echo
