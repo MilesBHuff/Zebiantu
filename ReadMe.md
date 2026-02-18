@@ -48,7 +48,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
     * `fs`: Configure filesystems.
         * `zfs`: Configures the system to utilize ZFS.
         * `fs`: Configures the system to utilize additional filesystems.
-        * `maintenance`: [WIP] Configures periodic trim, scrub, SMART, etc.
+        * `maintenance`: Configures periodic trim, scrub, SMART, etc.
         * `snapshots`: [WIP] Configures regularly taking and pruning snapshots. **Retention is per the Tower of Hanoi.**
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
         * `fsh`: Modifies the system's filesystem hierarchy to maximize the utility of ZFS's snapshots.
@@ -65,7 +65,6 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `tty`: Configures tty9 to run `btop` and tty10 to display the system console; and adds an easy way to display VM consoles on tty11+.
         * `integrity`: [WIP] Configures some automatic integrity checks.
     * `config`: Various supplementary configurations.
-        * `email`: [WIP] Configures sending email notifications.
         * `sizes`: Disables compression across the operating system to let ZFS compression take over. Also limits the sizes of logs.
         * `sysctl`: Various sysctl tweaks. Improves security, reduces logspam, and improves I/O performance.
         * `commandline`: Configures the kernel commandline, taking care to organize and deduplicate the arguments provided by the other modules.

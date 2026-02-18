@@ -36,3 +36,8 @@ cp /etc/skel/. /root/
 read -rp "Please enter a username for your personal user: " USERNAME
 id "$USERNAME" >/dev/null 2>&1 || adduser "$USERNAME"
 export USERNAME
+
+## Configure mail
+echo 'Select "Internet Site" during setup and enter your computer’s domain name.'
+apt install -y postfix mailutils
+echo 'You can now send local emails to users on this system.'

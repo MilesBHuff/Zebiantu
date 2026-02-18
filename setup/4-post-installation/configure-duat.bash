@@ -259,6 +259,24 @@ EOF
 
 #TODO: Restart daily because this box does not have ECC.
 
+#############################
+##   S C H E D U L I N G   ##
+#############################
+
+function reschedule-timer {
+    sed -i         's/^OnCalendar=.*$/OnCalendar='"$2"'/'         "$1"
+    sed -i        's/^AccuracySec=.*$/AccuracySec='"$3"'/'        "$1"
+    sed -i 's/^RandomizedDelaySec=.*$/RandomizedDelaySec='"$4"'/' "$1"
+}
+
+reschedule-timer '/etc/systemd/system/fstrim.timer'                       'weekly'  '5m' '20m'
+reschedule-timer '/etc/systemd/system/zfstrim.timer'                      'weekly'  '5m' '20m'
+reschedule-timer "/etc/systemd/system/zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly' '5m' '20m'
+# reschedule-timer '/etc/systemd/system/smart-short@.timer'                 'weekly'  '5m' '20m'
+# reschedule-timer '/etc/systemd/system/smart-long@.timer'                  'monthly' '5m' '20m'
+
+systemctl daemon-reload
+
 #########################################################
 ##   A D D I T I O N A L   C O N F I G U R A T I O N   ##
 #########################################################
