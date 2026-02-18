@@ -87,7 +87,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Sets up network interface passthrough.
     * Sets up an OPNsense VM.
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
-    * [WIP] Configures auto-restarts (because no ECC).
+    * Configures auto-restarts (because no ECC).
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-morpheus`: For my AI inference box.
@@ -95,7 +95,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Switches to NetworkManager.
     * [WIP] installs various things necessary for running inference (including ROCm).
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
-    * [WIP] Configures auto-restarts (because no ECC).
+    * Configures auto-restarts (because no ECC).
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 

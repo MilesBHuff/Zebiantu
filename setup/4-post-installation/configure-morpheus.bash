@@ -149,7 +149,7 @@ chown -R "$USERNAME" "$AI_DIR"
 ##   P O W E R   O N / O F F   ##
 #################################
 
-#TODO: Restart daily because this box does not have ECC.
+systemctl enable nightly-reboot.timer ## We need to restart daily because this box does not have ECC.
 
 #############################
 ##   S C H E D U L I N G   ##
@@ -171,6 +171,7 @@ reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly 1 01:00'         
 # reschedule-timer 'smart-short@.timer'               'monthly 7,14,21,28 00:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
 reschedule-timer 'fstrim.timer'                       'monthly 7,14,21,28 02:00' '10m' '0'
 reschedule-timer 'zfstrim.timer'                      'monthly 7,14,21,28 02:00' '10m' '0'
+reschedule-timer 'reboot.timer'                       'daily 05:00'              '10m' '0'
 
 systemctl daemon-reload
 

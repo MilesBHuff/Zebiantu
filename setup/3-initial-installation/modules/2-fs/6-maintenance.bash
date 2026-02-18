@@ -97,6 +97,28 @@ RandomizedDelaySec=6000
 WantedBy=timers.target
 EOF
 
+## Configure nightly restarts
+echo ':: Configuring automatic restart...'
+cat > '/etc/systemd/system/reboot.service' <<'EOF'
+[Unit]
+Description=Reboot
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl reboot
+EOF
+cat > '/etc/systemd/system/reboot.timer' <<'EOF'
+[Unit]
+Description=Daily reboot at 05:00
+[Timer]
+OnCalendar=*-*-* 05:00:00
+AccuracySec=10m
+Persistent=true
+RandomizedDelaySec=0
+[Install]
+WantedBy=timers.target
+EOF
+echo 'Note: Automatic restart is not enabled by default.'
+
 ## Add a memory-freeing script.
 echo ':: Adding a way to free memory on-demand...'
 cat > '/usr/local/sbin/clean-memory' <<'EOF' && chmod +x '/usr/local/sbin/clean-memory'
