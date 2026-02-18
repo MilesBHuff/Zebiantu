@@ -4,9 +4,9 @@
 ##
 ## **Blockers:**
 echo 'ZFS currently DOES NOT SUPPORT HIBERNATION, even hibernation to swap outside of ZFS.' >&2
-echo 'It is safe to latently enable hibernation in your configurations, but DO NOT USE IT until ZFS supports it!' >&2
-echo 'Additionally, because of this: the hibernation that this script enables has not been tested.' >&2
-echo 'Proceed at your own risk.' >&2
+echo -e 'It is safe to latently enable hibernation in your configurations, but \e[1mdo not use it\e[0m until ZFS supports it!' >&2
+echo -e 'Additionally, because of this: the hibernation that this script enables is \e[1mcompletely untested\e[0m.' >&2
+echo -e '\e[1mProceed at your own risk!\e[0m' >&2
 echo
 ##
 ## **Requirements:**
@@ -79,9 +79,8 @@ if [[ $CONTINUE -eq 1 ]]; then
     ############################################################################
     ##
     ## **Preparation:**
-    ## Set a hard quota on the OS zpool's root dataset that preserves an amount of space equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
-    ## Set `resume=` on the kernel commandline.
-    ## Ensure that initramfs is using systemd resume instead of classic resume, and that `systemd-hibernate-generator` runs *after* pool unlock and a read-only import.
+    ## * Set a hard quota on the OS zpool's root dataset that preserves an amount of space equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
+    ## * Set `resume=$DEVICE` on the kernel commandline.
     ##
     ############################################################################
 
@@ -138,14 +137,30 @@ EOF
     ## Tell the kernel where to look for resuming from hibernation.
     KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=$ZVOL_PATH_IN_DEV"
 
+    ############################################################################
+    ##
+    ## **Resume:**
+    ## * Modify the initramfs boot sequence so that the following happen in sequence:
+    ##   * The default `resume` functionality does not run.
+    ##   * Unlock the root pool as per normal.
+    ##   * Run a custom `resume-start` script:
+    ##     * Import root pool read-only without mounting anything. (`zpool import -No 'readonly=on' "$POOL_NAME"`)
+    ##     * Ensure the kernel is aware of device changes. (`udevadm settle`)
+    ##   * `systemd-hibernate-resume` handles the kernel's `resume=` parameter and attempts to resume. (After resume, the system will automatically detect and remove the hibernation swap device and zvol.)
+    ##   * If resuming fails or doesn't happen, run a custom `resume-end` script:
+    ##     * Export root pool. (`zpool export "$POOL_NAME"`)
+    ##   * The system continues booting as per normal. (During this regular boot, the system will automatically detect and remove the hibernation swap device and zvol.)
+    ##
+    ############################################################################
+
     ## Disable classic resume; it loads too early to work with zvols.
     cat > '/etc/initramfs-tools/conf.d/disable-classic-resume' <<'EOF'
 RESUME=none
 EOF
 
-    ## Configure initramfs-tools to use systemd-resume after a read-only mountless pool import, and then if there is nothing to resume from to re-import the root pool normally.
-    #TODO
-    ## This requires writing a script. I think this is maybe a bit much; I'd rather wait until Debian and Ubuntu are using Dracut, since they should then be using systemd-resume ootb.
+    ## Configure initramfs-tools to use systemd-resume after a read-only mountless pool import, and then if there is nothing to resume from to continue the boot normally.
+    #WARN: I am not comfortable with actually relying on something this invasive.
+    # BOOT_SCRIPT='/etc/initramfs-tools/scripts/local-top/00-zfs-readonly-resume'
 
     ############################################################################
     ##
@@ -240,7 +255,6 @@ EOF
     ##
     ## **Restoration:**
     ## initramfs unlocks the pool.
-    ## `systemd-hibernate-generator` handles resume.
     ## After restoration: swapoff hiberswap, then delete hibervol, then re-enable the protective quota.
     ##
     ############################################################################
