@@ -203,6 +203,8 @@ EOF
 # reschedule-timer 'smart-short@.timer' 'monthly 5,12,19,26 00:00' '10m' '0'
 # reschedule-timer 'smart-short@.timer' 'monthly 6,13,20,27 00:00' '10m' '0'
 # reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
+## L2ARC SSD (should finish quickly)
+# reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
 
 ## TRIM/DISCARD (could take a couple hours)
 reschedule-timer 'fstrim.timer'  'monthly 7,14,21,28 02:00' '10m' '0'
