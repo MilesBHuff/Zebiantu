@@ -55,9 +55,9 @@ declare -a ENV_VARS=(
     TARGET
 )
 for ENV_VAR in "${ENV_VARS[@]}"; do
-    if [[ -z "$(eval "\$$ENV_VAR")" ]]; then
-    echo "ERROR: This script is designed to be run from a \`chroot\` spawned by \`install-deb-distro.bash\`." >&2
-    exit 4
+    if [[ -z "${!ENV_VAR:-}" ]]; then
+        echo "ERROR: This script is designed to be run from a \`chroot\` spawned by \`install-deb-distro.bash\`." >&2
+        exit 4
     fi
 done
 unset ENV_VARS
@@ -70,7 +70,7 @@ KERNEL_COMMANDLINE=''
 ##   M O D U L E S   ##
 #######################
 
-for MODULE in $(/usr/bin/ls -1 ./modules/*/*); do
+for MODULE in ./modules/*/*; do
     echo '________________________________________________________________________________'
     DISPLAY="${MODULE#./modules/}"
     DISPLAY="${DISPLAY%.bash}"
@@ -90,7 +90,7 @@ done
 ## Wrap up
 echo ':: Creating snapshot...'
 set +e
-zfs snapshot -r "$ENV_POOL_NAME_OS@install-$DISTRO"
+zfs snapshot -r "$ENV_POOL_NAME_OS@install-from-chroot"
 set -e
 
 ## Done

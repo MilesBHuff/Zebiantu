@@ -11,7 +11,7 @@ function load_envfile {
 
     declare -a ENV_VARS="${@:2}"; shift 1
     for ENV_VAR in "${ENV_VARS[@]}"; do
-        if [[ -z "$(eval "\$$ENV_VAR")" ]]; then
+        if [[ -z "${!ENV_VAR:-}" ]]; then
             echo "ERROR: Missing variable in '$ENV_FILE'!" >&2
             exit 3
         fi
