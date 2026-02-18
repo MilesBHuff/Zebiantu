@@ -282,7 +282,7 @@ reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" '*-*-1 1:00'          '10m
 # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
 reschedule-timer 'fstrim.timer'                       '*-*-7,14,21,28 2:00' '10m' '0'
 reschedule-timer 'zfstrim.timer'                      '*-*-7,14,21,28 2:00' '10m' '0'
-reschedule-timer 'reboot.timer'                       '*-*-* 5:00'          '10m' '0'
+reschedule-timer 'reboot.timer'                       '*-*-* 6:00'          '10m' '0'
 
 systemctl daemon-reload
 
