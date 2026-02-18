@@ -12,7 +12,8 @@ EOF
 ## As this is run from a LiveCD, we know that if `initramfs-tools` is installed, it's because the system shipped with it, which means `dracut` is not being used for initramfs generation.
 ## In this scenario, we shouldn't present the user with the option to enable hibernation/resume, since the below depends on dracut and I don't think there's a robust way to make resuming safe without dracut/systemd.
 ## Newer versions of Ubuntu (25.10+) ship with dracut as their default initramfs generator, and so should be able to handle the below.
-else
+## We should nevertheless check for a couple things just to be safe.
+elif [[ command -v 'dracut' || command -v 'systemd-hibernate-resume' ]]; then
 
     ## **Blockers:**
     echo 'ZFS currently does not officially support hibernation, even hibernation to swap outside of ZFS.' >&2
@@ -300,26 +301,23 @@ EOF
         ## * Modify the initramfs boot sequence so that the following happen in sequence:
         ##   * The stock `resume` functionality does not run. (Already ensured early-on in this script.)
         ##   * Unlock the root pool as per normal.
-        ##   * Run a custom `resume-start` script:
+        ##   * Run a custom `resume` script:
         ##     * Get the root pool, as passed via kernel commandline by ZFSBootMenu
         ##     * Import root pool read-only without mounting anything.
         ##     * Ensure the kernel is aware of device changes.
-        ##   * `systemd-hibernate-resume` handles the kernel's `resume=` parameter and attempts to resume.
-        ##   * If resuming fails or doesn't happen, run a custom `resume-end` script:
-        ##     * Get the root pool, as passed via kernel commandline by ZFSBootMenu
-        ##     * Export root pool.
+        ##     * Let `systemd-hibernate-resume` handle the kernel's `resume=` parameter and attempt to resume.
+        ##     * If resuming fails or doesn't happen, export the root pool.
         ##   * The system continues booting as per normal.
         ## * During boot and after resume, custom scripts defined earlier in this installer script will detect and remove any remnant hibernation swap or zvol.
         #####################
 
-        ## Prepare the initramfs to resume from hibernation
-        RESUME_START_NAME='resume-start'
-        RESUME_START_SCRIPT="/usr/local/sbin/.$RESUME_START_NAME"
-        cat > "$RESUME_START_SCRIPT" <<EOF && chmod +x "$RESUME_START_SCRIPT"
+        RESUME_NAME='resume'
+        RESUME_SCRIPT="/usr/local/sbin/.$RESUME_NAME"
+        cat > "$RESUME_SCRIPT" <<EOF && chmod +x "$RESUME_SCRIPT"
 #!/bin/sh
 set -eu
-ROOT_SPEC="\$(sed -n 's/.*root=ZFS=\([^ ]*\).*/\1/p' /proc/cmdline)" #AI
-ZPOOL="\${ROOT_SPEC%%/*}"
+ROOT_DEVICE="\$(sed -n 's/.*root=ZFS=\([^ ]*\).*/\1/p' /proc/cmdline)" #AI
+ZPOOL="\${ROOT_DEVICE%%/*}"
 if zpool list "\$ZPOOL" >/dev/null 2>&1; then
     ## The pool shouldn't be imported. Fwiu, ZFSBootMenu imports it read-only, and then that import disappears during kexec.
     ## If the pool *is* imported for some reason, it *should* be fine to continue if it's imported read-only.
@@ -332,45 +330,22 @@ else
     zpool import -No readonly=on -o cachefile=none "\$ZPOOL"
 fi
 udevadm settle
+systemd-hibernate-resume
+## If this script is still running after resuming, then we know resume failed.
+zpool export "\$ZPOOL" || true
 EOF
-        RESUME_START_SERVICE="/etc/systemd/system/$RESUME_START_NAME.service"
-        cat > "$RESUME_START_SERVICE" <<EOF && systemctl enable "$RESUME_START_NAME"
+        RESUME_SERVICE="/etc/systemd/system/$RESUME_NAME.service"
+        cat > "$RESUME_SERVICE" <<EOF && systemctl enable "$RESUME_NAME"
 [Unit]
 Description=Permit systemd to resume from the root zpool
 ConditionPathExists=/etc/initrd-release
 DefaultDependencies=no
-Before=systemd-hibernate-resume.service zfs-import.target zfs-import-cache.service zfs-import-scan.service zfs-mount.service initrd-root-fs.target
-After=zfs-load-key.service systemd-udevd.service
+Conflicts=systemd-hibernate-resume.service
+Before=zfs-import.target zfs-import-cache.service zfs-import-scan.service zfs-mount.service initrd-root-fs.target
+After=zfs-load-key.service systemd-udevd.service initrd-root-device.target
 [Service]
 Type=oneshot
-ExecStart=-$RESUME_START_SCRIPT
-[Install]
-WantedBy=initrd.target
-EOF
-
-        ## Prepare the initramfs for a normal boot after attempting resume
-        RESUME_END_NAME='resume-end'
-        RESUME_END_SCRIPT="/usr/local/sbin/.$RESUME_END_NAME"
-        cat > "$RESUME_END_SCRIPT" <<EOF && chmod +x "$RESUME_END_SCRIPT"
-#!/bin/sh
-set -eu
-ROOT_SPEC="\$(sed -n 's/.*root=ZFS=\([^ ]*\).*/\1/p' /proc/cmdline)" #AI
-ZPOOL="\${ROOT_SPEC%%/*}"
-if zpool list "\$ZPOOL" >/dev/null 2>&1; then
-    zpool export "\$ZPOOL" || true
-fi
-EOF
-        RESUME_END_SERVICE="/etc/systemd/system/$RESUME_END_NAME.service"
-        cat > "$RESUME_END_SERVICE" <<EOF && systemctl enable "$RESUME_END_NAME"
-[Unit]
-Description=Permit systemd to boot after attempting to resume
-ConditionPathExists=/etc/initrd-release
-DefaultDependencies=no
-After=$RESUME_START_NAME.service systemd-hibernate-resume.service
-Before=initrd-root-fs.target zfs-import.target zfs-import-cache.service zfs-import-scan.service zfs-mount.service
-[Service]
-Type=oneshot
-ExecStart=-$RESUME_END_SCRIPT
+ExecStart=-$RESUME_SCRIPT
 [Install]
 WantedBy=initrd.target
 EOF
@@ -382,7 +357,6 @@ EOF
         unset POST_NAME POST_SCRIPT POST_SERVICE POST_HOOK
         unset MAIN_NAME MAIN_SCRIPT              MAIN_HOOK
         unset SWAP_LABEL ZVOL_NAME ZVOL_PATH_IN_ZPOOL ZVOL_PATH_IN_DEV
-        unset RESUME_START_NAME RESUME_START_SCRIPT RESUME_START_SERVICE
-        unset RESUME_END_NAME   RESUME_END_SCRIPT   RESUME_END_SERVICE
+        unset RESUME_NAME RESUME_SCRIPT RESUME_SERVICE
     fi
 fi
