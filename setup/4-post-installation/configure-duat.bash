@@ -265,6 +265,10 @@ systemctl enable nightly-reboot.timer ## We need to restart daily because this b
 
 function reschedule-timer {
     mkdir -p "/etc/systemd/system/$1.d"
+    if ! systemd-analyze calendar "$2" >/dev/null 2>&1; then
+        echo "$0: Invalid systemd calendar: '$2'. "
+        return 1
+    fi
     cat > "/etc/systemd/system/$1.d/schedule.conf" <<EOF
 [Timer]
 OnCalendar=$2
@@ -273,12 +277,12 @@ RandomizedDelaySec=$4
 EOF
 }
 
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly 1 01:00'          '10m' '0'
-# reschedule-timer 'smart-short@.timer'               'monthly 7,14,21,28 00:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
-# reschedule-timer 'smart-short@.timer'               'monthly 7,14,21,28 00:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
-reschedule-timer 'fstrim.timer'                       'monthly 7,14,21,28 02:00' '10m' '0'
-reschedule-timer 'zfstrim.timer'                      'monthly 7,14,21,28 02:00' '10m' '0'
-reschedule-timer 'reboot.timer'                       'daily 05:00'              '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" '*-*-1 1:00'          '10m' '0'
+# reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
+# reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
+reschedule-timer 'fstrim.timer'                       '*-*-7,14,21,28 2:00' '10m' '0'
+reschedule-timer 'zfstrim.timer'                      '*-*-7,14,21,28 2:00' '10m' '0'
+reschedule-timer 'reboot.timer'                       '*-*-* 5:00'          '10m' '0'
 
 systemctl daemon-reload
 

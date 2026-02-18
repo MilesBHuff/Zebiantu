@@ -182,6 +182,10 @@ systemctl start infnoise
 
 function reschedule-timer {
     mkdir -p "/etc/systemd/system/$1.d"
+    if ! systemd-analyze calendar "$2" >/dev/null 2>&1; then
+        echo "$0: Invalid systemd calendar: '$2'. "
+        return 1
+    fi
     cat > "/etc/systemd/system/$1.d/schedule.conf" <<EOF
 [Timer]
 OnCalendar=$2
@@ -192,45 +196,45 @@ EOF
 
 ## SHORT SMART TESTS
 ## vdev HDDs (should take a modest amount of time)
-# reschedule-timer 'smart-short@.timer' 'monthly 12,26 00:00' '10m' '0'
-# reschedule-timer 'smart-short@.timer' 'monthly 13,27 00:00' '10m' '0'
-# reschedule-timer 'smart-short@.timer' 'monthly 14,28 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-12,26 0:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-13,27 0:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-14,28 0:00' '10m' '0'
 ## svdev SSDs (should finish quickly)
-# reschedule-timer 'smart-short@.timer' 'monthly 5,12,19,26 00:00' '10m' '0'
-# reschedule-timer 'smart-short@.timer' 'monthly 6,13,20,27 00:00' '10m' '0'
-# reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-5,12,19,26 0:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-6,13,20,27 0:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-7,14,21,28 0:00' '10m' '0'
 ## OS SSDs (should finish quickly)
-# reschedule-timer 'smart-short@.timer' 'monthly 5,12,19,26 00:00' '10m' '0'
-# reschedule-timer 'smart-short@.timer' 'monthly 6,13,20,27 00:00' '10m' '0'
-# reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-5,12,19,26 0:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-6,13,20,27 0:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-7,14,21,28 0:00' '10m' '0'
 ## L2ARC SSD (should finish quickly)
-# reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' '*-*-7,14,21,28 0:00' '10m' '0'
 
 ## TRIM/DISCARD (could take a couple hours)
-reschedule-timer 'fstrim.timer'  'monthly 7,14,21,28 02:00' '10m' '0'
-reschedule-timer 'zfstrim.timer' 'monthly 7,14,21,28 02:00' '10m' '0'
+reschedule-timer 'fstrim.timer'  '*-*-7,14,21,28 2:00' '10m' '0'
+reschedule-timer 'zfstrim.timer' '*-*-7,14,21,28 2:00' '10m' '0'
 
 ## LONG SMART TESTS
 ## vdev HDDs (should take a couple days each)
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 01 01:00' '10m' '0'
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 04 01:00' '10m' '0'
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 07 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-1 1:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-4 1:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-7 1:00' '10m' '0'
 ## svdev SSDs (should finish quickly)
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 01 01:00' '10m' '0'
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 02 01:00' '10m' '0'
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 03 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-1 1:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-2 1:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-3 1:00' '10m' '0'
 ## OS SSDs (should finish quickly)
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 01 01:00' '10m' '0'
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 02 01:00' '10m' '0'
-# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 03 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-1 1:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-2 1:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' '*-1,5,9-3 1:00' '10m' '0'
 
 ## SCRUBS (will take a long time)
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  'Mar,Jul,Nov 01 01:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_NAS.timer" 'Mar,Jul,Nov 01 01:00' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  '*-3,7,11-1 1:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_NAS.timer" '*-3,7,11-1 1:00' '10m' '0'
 
 ## BACKUP MAINTENANCE
-# reschedule-timer 'smart-short@.timer' 'monthly 15 01:00' '10m' '0'
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_DAS.timer" 'monthly 01 03:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer'                '*-*-15 1:00' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_DAS.timer" '*-*-1 3:00'  '10m' '0'
 
 ## DONE
 systemctl daemon-reload
