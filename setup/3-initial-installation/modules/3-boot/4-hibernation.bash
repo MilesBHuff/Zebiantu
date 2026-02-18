@@ -3,9 +3,10 @@
 ################################################################################
 ##
 ## **Blockers:**
-echo 'ZFS currently DOES NOT SUPPORT HIBERNATION, even hibernation to swap outside of ZFS.' >&2
-echo -e 'It is safe to latently enable hibernation in your configurations, but \e[1mdo not use it\e[0m until ZFS supports it!' >&2
-echo -e 'Additionally, because of this: the hibernation that this script enables is \e[1mcompletely untested\e[0m.' >&2
+echo 'ZFS currently does not officially support hibernation, even hibernation to swap outside of ZFS.' >&2
+echo -e 'It is safe to latently enable hibernation in your configurations, but actually hibernating is \e[1munsupported\e[0m.' >&2
+echo -e 'Hibernation vis-à-vis this script will not work until Debian and Ubuntu use Dracut.' >&2
+echo -e 'As well: the hibernation that this script enables is, at present, \e[1mcompletely untested\e[0m.' >&2
 echo -e '\e[1mProceed at your own risk!\e[0m' >&2
 echo
 ##
@@ -30,7 +31,6 @@ echo '    * If hibernation takes a particularly long time, your UPS may die befo
 echo '* Systems with large RAM may find that the reservation required to support hibernation may eat far too much storage to be worthwhile.'
 echo '    * In extreme cases, it may be physically impossible to make a reservation large-enough to support hibernation.'
 echo '* Hibernation can cause weird issues with some applications, especially in a virtualization context.'
-echo
 echo 'Only use hibernation where it makes sense and where you can test and confirm it does not cause problems for your particular workload.'
 declare -i CONTINUE=-1
 while read -rp 'Enable hibernation? (y/n) ' ANSWER; do
@@ -280,6 +280,7 @@ case "\$1/\$2" in
         ;;
 esac
 EOF
+    echo -e '\e[1mAlways\e[0m hibernate with `systemctl hibernate`; do not \e[1mever\e[0m hibernate in any other way or you \e[1mwill\e[0m risk corruption. \e[1mYou have been warned!\e[0m' >&2
 
     #####################
     ##   R E S U M E   ##
@@ -302,9 +303,49 @@ EOF
 RESUME=none
 EOF
 
-    ## Configure initramfs-tools to use systemd-resume after a read-only mountless pool import, and then if there is nothing to resume from to continue the boot normally.
-    #WARN: I am not comfortable with actually relying on something this invasive.
-    # BOOT_SCRIPT='/etc/initramfs-tools/scripts/local-top/00-zfs-readonly-resume'
+    ## Prepare the initramfs to resume from hibernation
+    RESUME_START_NAME='resume-start'
+    RESUME_START_SCRIPT="/usr/local/sbin/.$RESUME_START_NAME"
+    cat > "$RESUME_START_SCRIPT" <<EOF && chmod +x "$RESUME_START_SCRIPT"
+#!/bin/sh
+#TODO
+EOF
+    RESUME_START_SERVICE="/etc/systemd/system/$RESUME_START_NAME.service"
+    cat > "$RESUME_START_SERVICE" <<EOF && systemctl enable "$RESUME_START_NAME"
+[Unit]
+Description=Permit systemd to resume from the root zpool
+ConditionPathExists=/etc/initrd-release
+DefaultDependencies=no
+Before=systemd-hibernate-resume.service zfs-import.target zfs-mount.service initrd-root-fs.target
+After=zfs-load-key.service systemd-udevd.service
+[Service]
+Type=oneshot
+ExecStart=$RESUME_START_SCRIPT
+[Install]
+WantedBy=initrd.target
+EOF
+
+    ## Prepare the initramfs for a normal boot after attempting resume
+    RESUME_END_NAME='resume-end'
+    RESUME_END_SCRIPT="/usr/local/sbin/.$RESUME_END_NAME"
+    cat > "$RESUME_END_SCRIPT" <<EOF && chmod +x "$RESUME_END_SCRIPT"
+#!/bin/sh
+#TODO
+EOF
+    RESUME_END_SERVICE="/etc/systemd/system/$RESUME_END_NAME.service"
+    cat > "$RESUME_END_SERVICE" <<EOF && systemctl enable "$RESUME_END_NAME"
+[Unit]
+Description=Permit systemd to boot after attempting to resume
+ConditionPathExists=/etc/initrd-release
+DefaultDependencies=no
+After=$RESUME_START_SERVICE.service systemd-hibernate-resume.service
+Before=initrd-root-fs.target zfs-mount.service
+[Service]
+Type=oneshot
+ExecStart=$RESUME_END_SCRIPT
+[Install]
+WantedBy=initrd.target
+EOF
 
     #######################
     ##   C L E A N U P   ##
