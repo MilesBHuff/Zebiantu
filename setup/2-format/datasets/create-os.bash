@@ -24,8 +24,8 @@ fi
 
 ## Declare variables
 #NOTE: All-caps is conventional for the dataset containing the OS, because capital letters sort before lowercase, and therefore load before lowercase.
-declare -a DATASETS=('/data' '/data/home' '/data/home/root' '/data/srv' '/data/var'  '/OS' '/OS/debian') ## The idea is to allow for separate OS snapshots and data snapshots while excluding unimportant tempfiles. The few things in `/var` that need to be kept with rollbacks can be placed into `/varkeep` and symlinked/bind-mounted back to their original locations.
-declare -a   MOUNTS=(     ''      '/home'           '/root'      '/srv'      '/var'     ''          '/')
+declare -a DATASETS=('/data' '/data/home' '/data/home/root' '/data/srv' '/temp' '/temp/var'  '/OS' '/OS/debian') ## The idea is to allow for separate OS snapshots and data snapshots while excluding unimportant tempfiles. The few things in `/var` that need to be kept with rollbacks can be placed into `/varkeep` and symlinked/bind-mounted back to their original locations.
+declare -a   MOUNTS=(     ''      '/home'           '/root'      '/srv' ''           '/var'     ''          '/')
 
 if [[ ! ${#DATASETS[@]} -eq ${#MOUNTS[@]} ]]; then
     echo "ERROR: Mismatch in number of items in the DATASETS (${#DATASETS[@]}) and MOUNTS (${#MOUNTS[@]}) arrays; please fix!" >&2
