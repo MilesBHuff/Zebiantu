@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 #NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 ################################################################################
-## As this is run from a LiveCD, we know that if `initramfs-tools` is installed, it's because the system shipped with it, which means `dracut` is not being used for initramfs generation.
-## In this scenario, we should disable resume altogether, since I don't think there's a robust way to make resuming safe without dracut and systemd.
+
+## We should disable default resume functionality, since it flat-out will not work with ZFS; we have to use the custom design specified below.
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE noresume rd.noresume"
+## If initramfs-tools is installed, we should also disable its version of resume.
 if dpkg -l | grep -q 'initramfs-tools'; then
-    cat > '/etc/initramfs-tools/conf.d/disable-classic-resume' <<'EOF'
+    cat > '/etc/initramfs-tools/conf.d/disable-resume' <<'EOF'
 RESUME=none
 EOF
+## As this is run from a LiveCD, we know that if `initramfs-tools` is installed, it's because the system shipped with it, which means `dracut` is not being used for initramfs generation.
+## In this scenario, we shouldn't present the user with the option to enable hibernation/resume, since the below depends on dracut and I don't think there's a robust way to make resuming safe without dracut/systemd.
 ## Newer versions of Ubuntu (25.10+) ship with dracut as their default initramfs generator, and so should be able to handle the below.
 else
+
     ## **Blockers:**
     echo 'ZFS currently does not officially support hibernation, even hibernation to swap outside of ZFS.' >&2
     echo -e 'It is safe to latently enable hibernation in your configurations, but actually hibernating is \e[1munsupported\e[0m.' >&2
@@ -293,7 +298,7 @@ EOF
         ##   R E S U M E   ##
         #####################
         ## * Modify the initramfs boot sequence so that the following happen in sequence:
-        ##   * The stock `resume` functionality does not run.
+        ##   * The stock `resume` functionality does not run. (Already ensured early-on in this script.)
         ##   * Unlock the root pool as per normal.
         ##   * Run a custom `resume-start` script:
         ##     * Get the root pool, as passed via kernel commandline by ZFSBootMenu
@@ -306,9 +311,6 @@ EOF
         ##   * The system continues booting as per normal.
         ## * During boot and after resume, custom scripts defined earlier in this installer script will detect and remove any remnant hibernation swap or zvol.
         #####################
-
-        ## Remove the stock `resume` functionality.
-        #TODO
 
         ## Prepare the initramfs to resume from hibernation
         RESUME_START_NAME='resume-start'
