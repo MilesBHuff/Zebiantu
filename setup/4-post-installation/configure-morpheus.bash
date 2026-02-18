@@ -166,11 +166,11 @@ RandomizedDelaySec=$4
 EOF
 }
 
-reschedule-timer 'fstrim.timer'                       'weekly'  '10m' '0'
-reschedule-timer 'zfstrim.timer'                      'weekly'  '10m' '0'
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly' '10m' '0'
-# reschedule-timer 'smart-short@.timer'                 'weekly'  '10m' '0'
-# reschedule-timer 'smart-long@.timer'                  'monthly' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly 1 01:00'          '10m' '0'
+# reschedule-timer 'smart-short@.timer'               'monthly 7,14,21,28 00:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
+# reschedule-timer 'smart-short@.timer'               'monthly 7,14,21,28 00:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
+reschedule-timer 'fstrim.timer'                       'monthly 7,14,21,28 02:00' '10m' '0'
+reschedule-timer 'zfstrim.timer'                      'monthly 7,14,21,28 02:00' '10m' '0'
 
 systemctl daemon-reload
 

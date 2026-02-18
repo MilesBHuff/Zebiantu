@@ -78,7 +78,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Installs proprietary software for applicable enterprise hardware
     * Sets up the TRNG
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
-    * [WIP] Schedule maintenance tasks for specific times.
+    * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-duat`: For my edge router / firewall.
     * Installs various necessary applications.
@@ -87,7 +87,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Sets up an OPNsense VM.
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * [WIP] Configures auto-restarts (because no ECC).
-    * [WIP] Schedule maintenance tasks for specific times.
+    * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-morpheus`: For my AI inference box.
     * Installs various necessary applications.
@@ -95,7 +95,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * [WIP] installs various things necessary for running inference (including ROCm).
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * [WIP] Configures auto-restarts (because no ECC).
-    * [WIP] Schedule maintenance tasks for specific times.
+    * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 
 #### conversion

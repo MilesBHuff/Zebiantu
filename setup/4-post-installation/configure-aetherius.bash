@@ -178,7 +178,7 @@ systemctl start infnoise
 #############################
 ##   S C H E D U L I N G   ##
 #############################
-#TODO: Get drive WWN IDs (`/dev/disk/by-id/`).
+#TODO: Get drive WWNs (`/dev/disk/by-id/`).
 
 function reschedule-timer {
     mkdir -p "/etc/systemd/system/$1.d"
