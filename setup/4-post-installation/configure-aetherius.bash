@@ -225,7 +225,7 @@ reschedule-timer 'zfstrim.timer' 'monthly 7,14,21,28 02:00' '10m' '0'
 # reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 03 01:00' '10m' '0'
 
 ## SCRUBS (will take a long time)
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  'Mar,Jul,Nov 01 01:00' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  'Mar,Jul,Nov 01 01:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
 reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_NAS.timer" 'Mar,Jul,Nov 01 01:00' '10m' '0'
 
 ## BACKUP MAINTENANCE
