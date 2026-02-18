@@ -262,18 +262,23 @@ EOF
 #############################
 ##   S C H E D U L I N G   ##
 #############################
+#TODO: Get drive WWN IDs (`/dev/disk/by-id/`).
 
 function reschedule-timer {
-    sed -i         's/^OnCalendar=.*$/OnCalendar='"$2"'/'         "$1"
-    sed -i        's/^AccuracySec=.*$/AccuracySec='"$3"'/'        "$1"
-    sed -i 's/^RandomizedDelaySec=.*$/RandomizedDelaySec='"$4"'/' "$1"
+    mkdir -p "/etc/systemd/system/$1.d"
+    cat > "/etc/systemd/system/$1.d/schedule.conf" <<EOF
+[Timer]
+OnCalendar=$2
+AccuracySec=$3
+RandomizedDelaySec=$4
+EOF
 }
 
-reschedule-timer '/etc/systemd/system/fstrim.timer'                       'weekly'  '5m' '20m'
-reschedule-timer '/etc/systemd/system/zfstrim.timer'                      'weekly'  '5m' '20m'
-reschedule-timer "/etc/systemd/system/zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer'                 'weekly'  '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer'                  'monthly' '5m' '20m'
+reschedule-timer 'fstrim.timer'                       'weekly'  '10m' '0'
+reschedule-timer 'zfstrim.timer'                      'weekly'  '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" 'monthly' '10m' '0'
+# reschedule-timer 'smart-short@.timer'                 'weekly'  '10m' '0'
+# reschedule-timer 'smart-long@.timer'                  'monthly' '10m' '0'
 
 systemctl daemon-reload
 

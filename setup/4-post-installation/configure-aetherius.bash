@@ -178,53 +178,57 @@ systemctl start infnoise
 #############################
 ##   S C H E D U L I N G   ##
 #############################
-#TODO: Get drive IDs (`/dev/disk/by-id/`).
+#TODO: Get drive WWN IDs (`/dev/disk/by-id/`).
 
 function reschedule-timer {
-    sed -i         's/^OnCalendar=.*$/OnCalendar='"$2"'/'         "$1"
-    sed -i        's/^AccuracySec=.*$/AccuracySec='"$3"'/'        "$1"
-    sed -i 's/^RandomizedDelaySec=.*$/RandomizedDelaySec='"$4"'/' "$1"
+    mkdir -p "/etc/systemd/system/$1.d"
+    cat > "/etc/systemd/system/$1.d/schedule.conf" <<EOF
+[Timer]
+OnCalendar=$2
+AccuracySec=$3
+RandomizedDelaySec=$4
+EOF
 }
 
 ## SHORT SMART TESTS
 ## vdev HDDs (should take a modest amount of time)
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 12,26 00:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 13,27 00:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 14,28 00:00' '5m' '20m'
+# reschedule-timer 'smart-short@.timer' 'monthly 12,26 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' 'monthly 13,27 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' 'monthly 14,28 00:00' '10m' '0'
 ## svdev SSDs (should finish quickly)
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 5,12,19,26 00:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 6,13,20,27 00:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 7,14,21,28 00:00' '5m' '20m'
+# reschedule-timer 'smart-short@.timer' 'monthly 5,12,19,26 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' 'monthly 6,13,20,27 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
 ## OS SSDs (should finish quickly)
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 5,12,19,26 00:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 6,13,20,27 00:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 7,14,21,28 00:00' '5m' '20m'
+# reschedule-timer 'smart-short@.timer' 'monthly 5,12,19,26 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' 'monthly 6,13,20,27 00:00' '10m' '0'
+# reschedule-timer 'smart-short@.timer' 'monthly 7,14,21,28 00:00' '10m' '0'
 
 ## TRIM/DISCARD (could take a couple hours)
-reschedule-timer '/etc/systemd/system/fstrim.timer'  'monthly 7,14,21,28 02:00' '5m' '20m'
-reschedule-timer '/etc/systemd/system/zfstrim.timer' 'monthly 7,14,21,28 02:00' '5m' '20m'
+reschedule-timer 'fstrim.timer'  'monthly 7,14,21,28 02:00' '10m' '0'
+reschedule-timer 'zfstrim.timer' 'monthly 7,14,21,28 02:00' '10m' '0'
 
 ## LONG SMART TESTS
 ## vdev HDDs (should take a couple days each)
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 01 01:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 04 01:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 07 01:00' '5m' '20m'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 01 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 04 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 07 01:00' '10m' '0'
 ## svdev SSDs (should finish quickly)
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 01 01:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 02 01:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 03 01:00' '5m' '20m'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 01 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 02 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 03 01:00' '10m' '0'
 ## OS SSDs (should finish quickly)
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 01 01:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 02 01:00' '5m' '20m'
-# reschedule-timer '/etc/systemd/system/smart-long@.timer' 'Jan,May,Sep 03 01:00' '5m' '20m'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 01 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 02 01:00' '10m' '0'
+# reschedule-timer 'smart-long@.timer' 'Jan,May,Sep 03 01:00' '10m' '0'
 
 ## SCRUBS (will take a long time)
-reschedule-timer "/etc/systemd/system/zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  'Mar,Jul,Nov 01 01:00' '5m' '20m'
-reschedule-timer "/etc/systemd/system/zfs-scrub@$ENV_ZPOOL_NAME_NAS.timer" 'Mar,Jul,Nov 01 01:00' '5m' '20m'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  'Mar,Jul,Nov 01 01:00' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_NAS.timer" 'Mar,Jul,Nov 01 01:00' '10m' '0'
 
 ## BACKUP MAINTENANCE
-# reschedule-timer '/etc/systemd/system/smart-short@.timer' 'monthly 15 01:00' '5m' '20m'
-reschedule-timer "/etc/systemd/system/zfs-scrub@$ENV_ZPOOL_NAME_DAS.timer" 'monthly 01 03:00' '5m' '20m'
+# reschedule-timer 'smart-short@.timer' 'monthly 15 01:00' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_DAS.timer" 'monthly 01 03:00' '10m' '0'
 
 ## DONE
 systemctl daemon-reload
