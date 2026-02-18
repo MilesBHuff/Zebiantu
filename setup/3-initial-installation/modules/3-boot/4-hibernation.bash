@@ -76,13 +76,12 @@ if [[ $CONTINUE -eq 1 ]]; then
     ZVOL_PATH_IN_ZPOOL="$ENV_POOL_NAME_OS/$ZVOL_NAME"
     ZVOL_PATH_IN_DEV="/dev/zvol/$ZVOL_PATH_IN_ZPOOL"
 
-    ############################################################################
-    ##
-    ## **Preparation:**
-    ## * Set a hard quota on the OS zpool's root dataset that preserves an amount of space equal to the total amount of installed RAM (as this is the largest hibervol our algorithm will create).
-    ## * Set `resume=$DEVICE` on the kernel commandline.
-    ##
-    ############################################################################
+    #############################
+    ##   G R O U N D W O R K   ##
+    #############################
+
+    ## Tell the kernel where to look for resuming from hibernation.
+    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=$ZVOL_PATH_IN_DEV"
 
     ## Every boot, set a new quota on the OS zpool that guarantees enough room to swap.
     PREP_NAME='set-quota-for-hibernation'
@@ -119,7 +118,7 @@ unset TOTAL_STORAGE TOTAL_RAM
 exec "\$ZFS_BIN" set "quota=\$QUOTA" "\$ZPOOL_DATASET"
 EOF
     PREP_SERVICE="/etc/systemd/system/$PREP_NAME.service"
-    cat > "$PREP_SERVICE" <<EOF
+    cat > "$PREP_SERVICE" <<EOF && systemctl enable "$PREP_NAME" #NOTE: No `--now` because we're in a chroot.
 [Unit]
 Description=Set a quota on \`$ENV_POOL_NAME_OS\` that ensures the possibility of hibernation.
 DefaultDependencies=no
@@ -132,53 +131,82 @@ ExecStart=-$PREP_SCRIPT
 [Install]
 WantedBy=sysinit.target
 EOF
-    systemctl enable "$PREP_NAME" #NOTE: No `--now` because we're in a chroot.
 
-    ## Tell the kernel where to look for resuming from hibernation.
-    KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE resume=$ZVOL_PATH_IN_DEV"
+    ###########################################
+    ##   A F T E R   R E S T O R A T I O N   ##
+    ###########################################
 
-    ############################################################################
-    ##
-    ## **Resume:**
-    ## * Modify the initramfs boot sequence so that the following happen in sequence:
-    ##   * The default `resume` functionality does not run.
-    ##   * Unlock the root pool as per normal.
-    ##   * Run a custom `resume-start` script:
-    ##     * Import root pool read-only without mounting anything. (`zpool import -No 'readonly=on' "$POOL_NAME"`)
-    ##     * Ensure the kernel is aware of device changes. (`udevadm settle`)
-    ##   * `systemd-hibernate-resume` handles the kernel's `resume=` parameter and attempts to resume. (After resume, the system will automatically detect and remove the hibernation swap device and zvol.)
-    ##   * If resuming fails or doesn't happen, run a custom `resume-end` script:
-    ##     * Export root pool. (`zpool export "$POOL_NAME"`)
-    ##   * The system continues booting as per normal. (During this regular boot, the system will automatically detect and remove the hibernation swap device and zvol.)
-    ##
-    ############################################################################
+    ## Swap off hiberswap and delete hibervol
+    POST_NAME='post-hibernation-cleanup'
+    POST_SCRIPT="/usr/local/sbin/$POST_NAME"
+    cat > "$POST_SCRIPT" <<EOF && chmod +x "$POST_SCRIPT"
+#!/bin/sh
+set -eu
+if [ -b "$ZVOL_PATH_IN_DEV" ]; then
 
-    ## Disable classic resume; it loads too early to work with zvols.
-    cat > '/etc/initramfs-tools/conf.d/disable-classic-resume' <<'EOF'
-RESUME=none
+    ## Swapoff $SWAP_LABEL
+    if grep -q "$ZVOL_NAME" /proc/swaps; then
+        SWAPOFF_BIN="$(command -v swapoff)"
+        "\$SWAPOFF_BIN" -L "$SWAP_LABEL"
+        unset SWAPOFF_BIN
+    fi
+
+    ## Destroy $ZVOL_NAME
+    HIBERVOL="$ZVOL_PATH_IN_ZPOOL"
+    ZFS_BIN="$(command -v zfs)"
+    "\$ZFS_BIN" list -H -o name "\$HIBERVOL" >/dev/null 2>&1 &&\
+        exec "\$ZFS_BIN" destroy -f "\$HIBERVOL"
+fi
+exit 0
+EOF
+    POST_SERVICE="/etc/systemd/system/$POST_NAME.service"
+    cat > "$POST_SERVICE" <<EOF && systemctl enable "$POST_NAME"
+[Unit]
+Description=Remove $ZVOL_NAME after resume
+DefaultDependencies=no
+Requires=zfs-import.target
+After=zfs-import.target
+Before=$PREP_NAME.service
+ConditionPathExists=!/etc/initrd-release
+[Service]
+Type=oneshot
+ExecStart=-$POST_SCRIPT
+[Install]
+WantedBy=sysinit.target
 EOF
 
-    ## Configure initramfs-tools to use systemd-resume after a read-only mountless pool import, and then if there is nothing to resume from to continue the boot normally.
-    #WARN: I am not comfortable with actually relying on something this invasive.
-    # BOOT_SCRIPT='/etc/initramfs-tools/scripts/local-top/00-zfs-readonly-resume'
+    ## Re-enable protective quota
+    POST_HOOK="/etc/systemd/system-sleep/00-$PREP_NAME.sh"
+    cat > "$POST_HOOK" <<EOF && chmod +x "$POST_HOOK"
+#!/bin/sh
+case "\$1/\$2" in
+    post/hibernate)
+        exec "$PREP_SCRIPT"
+        ;;
+esac
+EOF
 
-    ############################################################################
-    ##
-    ## **Hibernation:**
-    ## Disable the protective quota, create a new non-sparse zvol named "hibervol" equal to total RAM, with `refreservation=<total RAM>`, `volblocksize=4K`, `sync=always`, `logbias=throughput`, `primarycache=metadata`, `secondarycache=none`, `compression=off`, `com.sun:auto-snapshot=false`.
-    ## * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
-    ## * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
-    ## Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
-    ## Run the `clean-memory` script (it drops unneeded caches and compacts memory).
-    ## * Reducing the contents of RAM before hibernation makes hibernation and restore faster because less data must be written to disk.
-    ## * Compacting can *slightly* help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
-    ## * Temporary impacts on performance from this cleanup isn't relevant since the system is going to go down right after, anyway.
-    ## Swapon hiberswap.
-    ## Run `zpool sync`, then initiate hibernation.
-    ##
-    ############################################################################
-
+    ################################
+    ##   H I B E R N A T I O N   ###
+    ################################
+    ## Create a script that runs before each hibernation:
+    ## * Disable the protective quota
+    ## * Create a new non-sparse zvol named "hibervol" equal to total RAM, with `refreservation=<total RAM>`, `volblocksize=4K`, `sync=always`, `logbias=throughput`, `primarycache=metadata`, `secondarycache=none`, `compression=off`, `com.sun:auto-snapshot=false`.
+    ##   * The kernel has its own compression algorithm for hibernation; ergo, ZFS compression should be disabled, lest we double-compress.
+    ##   * zram swap, being in RAM, is automatically included as part of the hibernation image — this means we don't need to drain it before hibernation, which is a huge win: draining a large zram swap always risks triggering an OOM killer.
+    ## * Format hibervol as swap with swap label "hiberswap" and set its priority to `-1` (the lowest).
+    ## * Swapon hiberswap.
+    ## * Stop any ongoing scrubs/resilvers, out of an abundance of caution.
+    ## * Run the `clean-memory` script (it drops unneeded caches and compacts memory).
+    ##   * Reducing the contents of RAM before hibernation makes hibernation and restore faster because less data must be written to disk.
+    ##   * Compacting may *slightly* help with compression ratio during hibernation (thereby speeding up I/O), and it gives the system less-fragmented RAM after resume.
+    ##   * Temporary impacts on performance from this cleanup aren't relevant since the system is going to go down right after, anyway.
+    ## * Run `zpool sync`.
+    ## * Allow hibernation to happen.
+    ################################
     MAIN_NAME='zfs-hibernate'
+
+    ## This is the script that implements the above.
     MAIN_SCRIPT="/usr/local/sbin/$MAIN_NAME"
     cat > "$MAIN_SCRIPT" <<EOF && chmod +x "$MAIN_SCRIPT"
 #!/bin/sh
@@ -229,7 +257,7 @@ unset MKSWAP_BIN
 "\$SWAPON_BIN" -p '-1' "\$ZVOL_PATH_IN_DEV"
 unset SWAPON_BIN ZVOL_PATH_IN_DEV
 
-## Stop any ongoing scrubs/resilvers, out of an abundance of caution.
+## Stop scrubs/resilvers
 "\$ZPOOL_BIN" scrub -s "\$ENV_POOL_NAME_OS" >/dev/null 2>&1 || true
 
 ## Sync I/O and drop unneeded pages
@@ -241,6 +269,8 @@ unset ZPOOL_BIN
 ## Initiate hibernation.
 exit 0
 EOF
+
+    ## This fires the above script off right before every systemd-mediated hibernation.
     MAIN_HOOK="/etc/systemd/system-sleep/99-$MAIN_NAME.sh"
     cat > "$MAIN_HOOK" <<EOF && chmod +x "$MAIN_HOOK"
 #!/bin/sh
@@ -251,63 +281,34 @@ case "\$1/\$2" in
 esac
 EOF
 
-    ############################################################################
-    ##
-    ## **Restoration:**
-    ## initramfs unlocks the pool.
-    ## After restoration: swapoff hiberswap, then delete hibervol, then re-enable the protective quota.
-    ##
-    ############################################################################
+    #####################
+    ##   R E S U M E   ##
+    #####################
+    ## * Modify the initramfs boot sequence so that the following happen in sequence:
+    ##   * The default `resume` functionality does not run.
+    ##   * Unlock the root pool as per normal.
+    ##   * Run a custom `resume-start` script:
+    ##     * Import root pool read-only without mounting anything. (`zpool import -No 'readonly=on' -o cachefile=none "$POOL_NAME"`)
+    ##     * Ensure the kernel is aware of device changes. (`udevadm settle`)
+    ##   * `systemd-hibernate-resume` handles the kernel's `resume=` parameter and attempts to resume.
+    ##   * If resuming fails or doesn't happen, run a custom `resume-end` script:
+    ##     * Export root pool. (`zpool export "$POOL_NAME"`)
+    ##   * The system continues booting as per normal.
+    ## * During boot and after resume, custom scripts defined earlier in this installer script will detect and remove any remnant hibernation swap or zvol.
+    #####################
 
-    POST_NAME='post-hibernation-cleanup'
-    POST_SCRIPT="/usr/local/sbin/$POST_NAME"
-    cat > "$POST_SCRIPT" <<EOF && chmod +x "$POST_SCRIPT"
-#!/bin/sh
-set -eu
-if [ -b "$ZVOL_PATH_IN_DEV" ]; then
-
-    ## Swapoff $SWAP_LABEL
-    if grep -q "$ZVOL_NAME" /proc/swaps; then
-        SWAPOFF_BIN="$(command -v swapoff)"
-        "\$SWAPOFF_BIN" -L "$SWAP_LABEL"
-        unset SWAPOFF_BIN
-    fi
-
-    ## Destroy $ZVOL_NAME
-    HIBERVOL="$ZVOL_PATH_IN_ZPOOL"
-    ZFS_BIN="$(command -v zfs)"
-    "\$ZFS_BIN" list -H -o name "\$HIBERVOL" >/dev/null 2>&1 &&\
-        exec "\$ZFS_BIN" destroy -f "\$HIBERVOL"
-fi
-exit 0
-EOF
-    POST_SERVICE="/etc/systemd/system/$POST_NAME.service"
-    cat > "$POST_SERVICE" <<EOF
-[Unit]
-Description=Remove $ZVOL_NAME after resume
-DefaultDependencies=no
-Requires=zfs-import.target
-After=zfs-import.target
-Before=$PREP_NAME.service
-ConditionPathExists=!/etc/initrd-release
-[Service]
-Type=oneshot
-ExecStart=-$POST_SCRIPT
-[Install]
-WantedBy=sysinit.target
-EOF
-    systemctl enable "$POST_NAME" #NOTE: No `--now` because we're in a chroot.
-    POST_HOOK="/etc/systemd/system-sleep/00-$PREP_NAME.sh"
-    cat > "$POST_HOOK" <<EOF && chmod +x "$POST_HOOK"
-#!/bin/sh
-case "\$1/\$2" in
-    post/hibernate)
-        exec "$PREP_SCRIPT"
-        ;;
-esac
+    ## Disable classic resume; it loads too early to work with zvols.
+    cat > '/etc/initramfs-tools/conf.d/disable-classic-resume' <<'EOF'
+RESUME=none
 EOF
 
-    ############################################################################
+    ## Configure initramfs-tools to use systemd-resume after a read-only mountless pool import, and then if there is nothing to resume from to continue the boot normally.
+    #WARN: I am not comfortable with actually relying on something this invasive.
+    # BOOT_SCRIPT='/etc/initramfs-tools/scripts/local-top/00-zfs-readonly-resume'
+
+    #######################
+    ##   C L E A N U P   ##
+    #######################
     unset PREP_NAME PREP_SCRIPT PREP_SERVICE
     unset MAIN_NAME MAIN_SCRIPT              MAIN_HOOK
     unset POST_NAME POST_SCRIPT POST_SERVICE POST_HOOK
