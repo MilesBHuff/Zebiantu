@@ -6,7 +6,7 @@ echo ':: Configuring swap...'
 ## Putting live swap on ZFS is *very* fraught; don't do it!
 ## Using a swap partition is a permanent loss of disk space, and there is much complexity involved because it must be encrypted — that means mdadm and LUKS beneath it.
 ## Swapping to zram (a compressed RAMdisk) is by *far* the simplest solution *and* its size is dynamic according to need, but it cannot be hibernated to.
-## Hibernation support can be re-added by creating a temporary swap zvol when hibernation is requested, and removing it after resuming.
+## Hibernation support can be re-added by creating a temporary swap zvol when hibernation is requested, and removing it after resuming. (This is implemented in `boot/hibernation.bash`.)
 ## (In principle, because this swap zvol's size is dynamically allocated according to current memory usage, this actually gives a stronger guarantee of being able to hibernate than many fixed-size swap partitions.)
 ## Because RAM is not plentiful, we want to compress swap so that we can store as much as possible; but high compression has a non-negligible cost when swapping in and out frequently.
 ## zswap is an optional intermediate cache between RAM and the actual swap device, with its own compression settings.
@@ -17,28 +17,54 @@ echo ':: Configuring swap...'
 ## We need to leave enough free RAM to where the system does not experience memory pressure (which becomes a serious problem around *roughly* 80% utilization).
 ## 50% is about the highest reasonable for zswap + zram, since that allows 30% for normal system use when factoring that the last 20% are pressured. (Of course, the exact percents that make sense do depend somewhat on absolute system memory and idle workload.)
 ## With 50% dedication, a 1:2 ratio of zswap:zram keeps us close to the default values for each. That's 16.67% for zswap, and 33.33% for the zram.
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=17 zswap.compressor=lz4" #NOTE: Fractional percents (eg, `12.5`) are not possible.
+## In modern kernels (5.19+), you can additionally specify a backing device for zram swap; this lets us have a 4-tiered swapping solution: RAM, lz4 zswap, zstd-2 zram swap, disk.
+## While normally it is very unwise to swap to a zvol, having a zvol as a very cold writeback device behind your main RAM-based swap device is likely fine, and in any case preferrable to running out of memory.
+##
+## I have used this exact profile (without a writeback device) in two systems that operate under intense memory pressure: a laptop from 2012 being asked to run modern Firefox all day long, and a memory-constrained Minecraft VPS.
+## Interactive performance on the laptop improved so noticeably I didn't even bother testing it formally except to verify that, yes, zswap will happily cache a zram swap.
+## On the Minecraft server:
+## * `vmstat 1` indicated no thrashing even when stressing it with the hardest workloads I could give it.
+## * `watch -n1 cat /proc/pressure/memory` indicated no significant memory pressure even under the worst workloads
+## * `free -h` has significant free memory and page cache
+## All in spite of the fact that that server has so little RAM that it physically cannot run without hundreds of MiB of swap usage.
+##
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=17 zswap.compressor=lz4 zswap.zpool=zsmalloc same_filled_pages_enabled=1" #NOTE: Fractional percents (eg, `12.5`) are not possible.
+## This uses the same settings used in `boot/hibernation.bash`; look there for explanations on why they were chosen.
+declare -i WRITEBACK_GiB=4
+zfs create \
+    -V ${WRITEBACK_GiB}G \
+    -o refreservation=${WRITEBACK_GiB}G \
+    -b 4K \
+    -o sync=disabled \
+    -o primarycache=metadata \
+    -o secondarycache=none \
+    -o compression=off \
+    -o com.sun:auto-snapshot=false \
+    "$ENV_POOL_NAME_OS/zram0-writeback"
 apt install -y systemd-zram-generator
-cat > /etc/systemd/zram-generator.conf.d/zram0 <<'EOF'
+## Yes, I know that `zram-fraction` is redundant; I'm just setting it and `max-zram-size` (which must be disabled else `zram-size` is ignored) to cleanly override the defaults for `[zram0]`.
+cat > /etc/systemd/zram-generator.conf.d/zram0.conf <<EOF
 ## zram swap
 [zram0]
+fs-type = swap
+swap-priority = 32767
+compression-algorithm = zstd(level=2)
+max-zram-size = none
 zram-fraction = 0.3333333333333333
 zram-size = ram / 3
-max-zram-size = none
-compression-algorithm = zstd(level=2)
-swap-priority = 32767
+writeback-device = /dev/zvol/$ENV_POOL_NAME_OS/zram0-writeback
 EOF
-cat > /etc/systemd/zram-generator.conf.d/tmp <<'EOF'
+cat > /etc/systemd/zram-generator.conf.d/tmp.conf <<'EOF'
 ## /tmp
 ## * Vanilla tmpfs can swap (especially if it doesn't have a limit), so its stale files are *already* compressed via zswap + zram swap.
 ## * Compression DRAMATICALLY slows RAM.
 ## Given the above two considerations, `/tmp` on zram is quite unwise.
 EOF
-cat > /etc/systemd/zram-generator.conf.d/run <<'EOF'
+cat > /etc/systemd/zram-generator.conf.d/run.conf <<'EOF'
 ## /run
 ## This is mounted as tmpfs extremely early, before generators run; consequently, it is not possible to use zram for it (at least not in *this* way).
 EOF
-cat > /etc/systemd/zram-generator.conf.d/zram1 <<'EOF'
+cat > /etc/systemd/zram-generator.conf.d/zram1.conf <<'EOF'
 ## Example general-purpose zram device
 # [zram1]
 # zram-size = 1G
@@ -93,17 +119,18 @@ idempotent_append 'vm.swappiness=166' '/etc/sysctl.d/62-io-tweakable.conf'
 ## Configure `/tmp` as tmpfs
 echo ':: Configuring `/tmp`...'
 cp /usr/share/systemd/tmp.mount /etc/systemd/system/
-systemctl enable tmp.mount
 mkdir -p /etc/systemd/system/tmp.mount.d
 cat > /etc/systemd/system/tmp.mount.d/override.conf <<'EOF'
 [Mount]
 Options=mode=1777,nosuid,nodev,size=5G,noatime
 ## 5G is enough space to have 1G free while extracting a 4G archive (the max supported by FAT32). 1G is plenty for normal operation. ## No point in `lazytime` when the filesystem is in RAM.
+[Install]
+WantedBy=local-fs.target
 EOF
+systemctl daemon-reload ## May not work from `chroot`, but we have to try because the following command definitely won't work if we don't.
+sudo systemctl enable tmp.mount
 mkdir -p /etc/systemd/system/console-setup.service.d
 cat > /etc/systemd/system/console-setup.service.d/override.conf <<'EOF' #BUG: Resolves an upstream issue where console-setup can happen shortly before tmpfs mounts and accordingly fail when tmpfs effectively deletes /tmp while console-setup is happening.
 [Unit]
-# Requires=tmp.mount
 After=tmp.mount
 EOF
-# systemctl daemon-reload ## Shouldn't run from chroot.
