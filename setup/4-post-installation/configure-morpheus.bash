@@ -149,7 +149,7 @@ chown -R "$USERNAME" "$AI_DIR"
 ##   P O W E R   O N / O F F   ##
 #################################
 
-systemctl enable nightly-reboot.timer ## We need to restart daily because this box does not have ECC.
+systemctl enable reboot.timer ## We need to restart daily because this box does not have ECC.
 
 #############################
 ##   S C H E D U L I N G   ##

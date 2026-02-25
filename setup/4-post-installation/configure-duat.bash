@@ -257,7 +257,7 @@ EOF
 
 #TODO: VM must be suspended or shut-down before any restart or power-off.
 
-systemctl enable nightly-reboot.timer ## We need to restart daily because this box does not have ECC.
+systemctl enable reboot.timer ## We need to restart daily because this box does not have ECC.
 
 #############################
 ##   S C H E D U L I N G   ##
