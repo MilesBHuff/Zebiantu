@@ -61,7 +61,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
     * `apps`: Add and configure various applications.
         * `packages`: Install all sorts of things that the system will need.
         * `time`: Configure the system's time daemon.
-        * `font`: [WIP] Give the system a better text-mode font.
+        * `font`: Give the system a better text-mode font.
         * `tty`: Configures tty9 to run `btop` and tty10 to display the system console; and adds an easy way to display VM consoles on tty11+.
         * `integrity`: [WIP] Configures some automatic integrity checks.
     * `config`: Various supplementary configurations.
