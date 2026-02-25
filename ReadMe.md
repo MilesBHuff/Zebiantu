@@ -79,7 +79,7 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Sets up the TRNG
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Schedule maintenance tasks for specific times.
-    * Configures non-OS snapshotting.
+    * Disables Sanoid in favor of Proxmox's builtin solution.
     * Tweaks some settings.
 * `configure-duat`: For my edge router / firewall.
     * Installs various necessary applications.
@@ -98,6 +98,10 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Configures auto-restarts (because no ECC).
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
+
+Note: Some things must be done manually via Proxmox's UI after running `configure-aetherius`:
+* Configure automatic snapshotting.
+* Configure automatically pulling snapshots from `duat` and `morpheus`.
 
 #### conversion
 Scripts that convert Debian / Ubuntu into a derivative.
