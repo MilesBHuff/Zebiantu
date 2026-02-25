@@ -23,12 +23,20 @@ EOF
 
 ## Call an upstream script that does it all for us.
 SCRIPT=$(mktemp)
-curl -O https://raw.githubusercontent.com/MrMasterbay/proxmox-from-scratch/main/little-goblin.sh "$SCRIPT"
+URL='https://raw.githubusercontent.com/MrMasterbay/proxmox-from-scratch/main/little-goblin.sh'
+HASH='8a4d261f94a10564587603ec38ea05fac2c66100fac0a5dc40e7b062fed18fdd'
+curl "$URL" -o "$SCRIPT"
+unset URL
+if [[ $(sha256sum "$SCRIPT" | awk '{print $1}') != "$HASH" ]]; then
+    echo "$0: '$SCRIPT' has an invalid checksum." >&2
+    rm -f "$SCRIPT"
+    exit 50
+fi
+unset HASH
 chmod +x "$SCRIPT"
-# exec "$SCRIPT"
 read -r 'We will now execute the conversion script. When it completes, do NOT allow it to restart your system; we need to run some things after it finishes.'
-source "$SCRIPT"
-rm "$SCRIPT"
+("$SCRIPT")
+rm -f "$SCRIPT"
 unset SCRIPT
 
 ## Restore custom sources.list
