@@ -2,6 +2,16 @@
 #NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
 echo ':: Configuring networking...'
 
+## Configure hosts
+cat > '/etc/hosts' <<EOF
+## Localhost
+127.0.0.1 localhost
+::1       localhost
+
+## Custom Addresses
+127.0.1.1 $HOSTNAME.home.arpa $HOSTNAME
+EOF
+
 ## Configure WOL
 read -rp 'Enter "y" to enable Wake-On-LAN, or "n" to leave it disabled. ' DO_IT
 if [[ "$DO_IT" == 'y' ]]; then
