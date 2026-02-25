@@ -293,6 +293,9 @@ systemctl daemon-reload
 ## Anubis's serial console gets TTY11.
 sudo systemctl enable --now vm-to-tty@anubis:11.service
 
+## Set a more-restrictive max size for tmpfs
+sed -i 's/size=5G/size=1G/' '/etc/systemd/system/tmp.mount.d/override.conf'
+
 ## Sysctl
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf

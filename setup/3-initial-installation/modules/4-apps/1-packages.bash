@@ -4,11 +4,10 @@
 ## Install daemons
 echo ':: Installing daemons...'
 ## Generally useful
-apt install -y chrony clamav clamav-daemon systemd-oomd
+apt install -y chrony clamav clamav-daemon
 systemctl enable chrony
 systemctl enable clamav-daemon
 systemctl enable clamav-freshclam
-systemctl enable systemd-oomd
 ## Niche
 apt install -y rasdaemon fail2ban
 systemctl enable fail2ban

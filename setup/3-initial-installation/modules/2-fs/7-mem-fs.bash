@@ -14,13 +14,15 @@ echo ':: Configuring swap...'
 ## This situation allows us to use heavier compression for the zram for maximum swap size, without risking a corresponding performance hit during swap thrashing.
 ## For zswap, then, we want to use the lightest reasonable compression algorithm.
 ## The main downside is that, when things move from zswap to the zram, they must first be decompressed before being recompressed. That's not a big deal, though, since only particularly cold pages should ever make it to the zram.
-## We need to leave enough free RAM to where the system does not experience memory pressure (which becomes a serious problem around *roughly* 80% utilization).
-## 50% is about the highest reasonable for zswap + zram, since that allows 30% for normal system use when factoring that the last 20% are pressured. (Of course, the exact percents that make sense do depend somewhat on absolute system memory and idle workload.)
-## With 50% dedication, a 1:2 ratio of zswap:zram keeps us close to the default values for each. That's 16.67% for zswap, and 33.33% for the zram.
+## We need to leave enough free RAM to where the system does not experience severe memory pressure (which tends to happen around *roughly* 80% utilization).
+## 70% is about the absolute highest I would think that we can realistically go for zswap + zram, since that allows 10% for normal system use before memory pressure becomes inescapably severe.
+## With a 70% dedication, we can use zswap and zram swap's default allocations: 20% and 50%, respectively.
 ## In modern kernels (5.19+), you can additionally specify a backing device for zram swap; this lets us have a 4-tiered swapping solution: RAM, lz4 zswap, zstd-2 zram swap, disk.
-## While normally it is very unwise to swap to a zvol, having a zvol as a very cold writeback device behind your main RAM-based swap device is likely fine, and in any case preferrable to running out of memory.
+## While normally it is very unwise to swap to a zvol, having a zvol as a very cold writeback device behind your main RAM-based swap device is *probably* fine, and in any case is preferrable to running out of memory.
 ##
-## I have used this exact profile (without a writeback device) in two systems that operate under intense memory pressure: a laptop from 2012 being asked to run modern Firefox all day long, and a memory-constrained Minecraft VPS.
+## I have used a more-conservative version of this profile (17% zswap, 33% zram swap, no writeback device) in two systems that operate under intense memory pressure:
+## * a laptop from 2012 being asked to run modern Firefox all day long
+## * a very-memory-constrained Minecraft VPS.
 ## Interactive performance on the laptop improved so noticeably I didn't even bother testing it formally except to verify that, yes, zswap will happily cache a zram swap.
 ## On the Minecraft server:
 ## * `vmstat 1` indicated no thrashing even when stressing it with the hardest workloads I could give it.
@@ -28,7 +30,7 @@ echo ':: Configuring swap...'
 ## * `free -h` has significant free memory and page cache
 ## All in spite of the fact that that server has so little RAM that it physically cannot run without hundreds of MiB of swap usage.
 ##
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=17 zswap.compressor=lz4 zswap.zpool=zsmalloc same_filled_pages_enabled=1" #NOTE: Fractional percents (eg, `12.5`) are not possible.
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=20 zswap.compressor=lz4 zswap.zpool=zsmalloc zswap.same_filled_pages_enabled=1" #NOTE: Fractional percents (eg, `12.5`) are not possible.
 ## This uses the same settings used in `boot/hibernation.bash`; look there for explanations on why they were chosen.
 declare -i WRITEBACK_GiB=4
 zfs create \
@@ -40,33 +42,43 @@ zfs create \
     -o secondarycache=none \
     -o compression=off \
     -o com.sun:auto-snapshot=false \
-    "$ENV_POOL_NAME_OS/zram0-writeback"
+    "$ENV_POOL_NAME_OS/zram-writeback"
 apt install -y systemd-zram-generator
-## Yes, I know that `zram-fraction` is redundant; I'm just setting it and `max-zram-size` (which must be disabled else `zram-size` is ignored) to cleanly override the defaults for `[zram0]`.
-cat > /etc/systemd/zram-generator.conf.d/zram0.conf <<EOF
-## zram swap
+
+## Yes, I know that `zram-fraction` is redundant when using `zram-size`; I'm just setting it and `max-zram-size` (which must be disabled else `zram-size` is ignored) to cleanly override the defaults for `[zram0]`.
+cat > '/etc/systemd/zram-generator.conf.d/zram0.conf' <<EOF
 [zram0]
 fs-type = swap
 swap-priority = 32767
 compression-algorithm = zstd(level=2)
 max-zram-size = none
-zram-fraction = 0.3333333333333333
-zram-size = ram / 3
-writeback-device = /dev/zvol/$ENV_POOL_NAME_OS/zram0-writeback
+zram-fraction = 0.5
+zram-size = ram / 2
+writeback-device = /dev/zvol/$ENV_POOL_NAME_OS/zram-writeback
 EOF
-cat > /etc/systemd/zram-generator.conf.d/tmp.conf <<'EOF'
+## This override ensures that the writeback device is ready before we start the zram swap device.
+cat > '/etc/systemd/system/systemd-zram-setup@zram0.service.d/override.conf' <<EOF
+[Unit]
+Wants=zfs-import.target
+After=zfs-import.target
+RequiresMountsFor=/dev/zvol
+ConditionPathExists=/dev/zvol/$ENV_POOL_NAME_OS/zram-writeback
+EOF
+## These are explanations of why you should not use zram for `/tmp` and `/run`.
+cat > '/etc/systemd/zram-generator.conf.d/tmp.conf' <<'EOF'
 ## /tmp
 ## * Vanilla tmpfs can swap (especially if it doesn't have a limit), so its stale files are *already* compressed via zswap + zram swap.
 ## * Compression DRAMATICALLY slows RAM.
 ## Given the above two considerations, `/tmp` on zram is quite unwise.
 EOF
-cat > /etc/systemd/zram-generator.conf.d/run.conf <<'EOF'
+cat > '/etc/systemd/zram-generator.conf.d/run.conf' <<'EOF'
 ## /run
 ## This is mounted as tmpfs extremely early, before generators run; consequently, it is not possible to use zram for it (at least not in *this* way).
 EOF
-cat > /etc/systemd/zram-generator.conf.d/zram1.conf <<'EOF'
+## This is a sample zram device. (Useful if you need to declare one later.)
+cat > '/etc/systemd/zram-generator.conf.d/zram1.conf' <<'EOF'
 ## Example general-purpose zram device
-# [zram1]
+# [zram2]
 # zram-size = 1G
 # compression-algorithm = lz4
 # fs-type = ext4
@@ -115,6 +127,10 @@ idempotent_append 'vm.page-cluster=0' '/etc/sysctl.d/62-io-tweakable.conf' ## Wi
 ## The algorithm to use is: `200 * ((s / d) / (1 + (s / d)))` (where `s` is "swap IOPS" and `d` is "disk IOPS")
 ## You should benchmark 4K random reads per second on your OS pool and on a zram device, using `fio`; then plug those figures into the above formula and use it for your swappiness value.
 idempotent_append 'vm.swappiness=166' '/etc/sysctl.d/62-io-tweakable.conf'
+## See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io-static.conf
+## The gist is: these tell the kernel to ensure a larger cushion of free space. The defaults are tuned to avoid swapping to disk; those default assumptions are inverted by a régime of compressed in-RAM swap.
+idempotent_append 'vm.watermark_scale_factor=125'  '/etc/sysctl.d/961-io-static.conf'
+idempotent_append 'vm.watermark_boost_factor=2500' '/etc/sysctl.d/961-io-static.conf'
 
 ## Configure `/tmp` as tmpfs
 echo ':: Configuring `/tmp`...'
@@ -134,3 +150,15 @@ cat > /etc/systemd/system/console-setup.service.d/override.conf <<'EOF' #BUG: Re
 [Unit]
 After=tmp.mount
 EOF
+
+## Enable sophisticated OOM-killing before the kernel's last-resort OOM-killing.
+echo ':: Configuring OOM behavior...'
+apt install -y systemd-oomd
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE psi=1"
+systemctl enable systemd-oomd
+## See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/68-debug.conf
+idempotent_append 'vm.oom_dump_tasks=0'           '/etc/sysctl.d/968-debug.conf'
+## See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io-static.conf
+idempotent_append 'vm.oom_kill_allocating_task=0' '/etc/sysctl.d/961-io-static.conf'
+idempotent_append 'vm.overcommit_memory=0'        '/etc/sysctl.d/961-io-static.conf'
+idempotent_append 'vm.overcommit_ratio=80'        '/etc/sysctl.d/961-io-static.conf'
