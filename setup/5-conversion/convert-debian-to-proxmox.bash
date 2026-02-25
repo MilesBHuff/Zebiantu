@@ -39,9 +39,10 @@ read -r 'We will now execute the conversion script. When it completes, do NOT al
 rm -f "$SCRIPT"
 unset SCRIPT
 
-## Restore custom sources.list
+## Restore customized files
 mv -f '/etc/apt/sources.list.bak' '/etc/apt/sources.list'
 apt update -y
+[[ -f '/etc/hosts.backup' ]] && mv -f '/etc/hosts.backup' '/etc/hosts' ## Shouldn't happen, since the conversion script only creates this file if there's no FQDN, and we definitely set one.
 
 ## Done
 exit 0
