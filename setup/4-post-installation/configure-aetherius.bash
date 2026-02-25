@@ -179,6 +179,7 @@ systemctl start infnoise
 ##   S C H E D U L I N G   ##
 #############################
 #TODO: Get drive WWNs (`/dev/disk/by-id/`).
+echo ':: Scheduling tasks...'
 
 function reschedule-timer {
     mkdir -p "/etc/systemd/system/$1.d"
@@ -242,6 +243,7 @@ systemctl daemon-reload
 #########################################################
 ##   A D D I T I O N A L   C O N F I G U R A T I O N   ##
 #########################################################
+echo ':: Configuring miscellania...'
 
 ## Ensure that the NAS is snapshotted and the backup is not
 cat >> '/etc/sanoid/sanoid.conf' <<EOF
@@ -259,6 +261,11 @@ cat > /etc/modprobe.d/kvm-amd.conf <<'EOF'
 options kvm-amd nested=1
 EOF
 
+## Set kernel commandline
+echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
+"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
+update-initramfs -u
+
 ## Sysctl
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
@@ -271,11 +278,6 @@ idempotent_append 'vm.dirty_expire_centisecs=1500'      '/etc/sysctl.d/62-io-twe
 idempotent_append 'vm.dirty_bytes=1250000000'           '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'vm.dirty_background_bytes=625000000' '/etc/sysctl.d/62-io-tweakable.conf'
 sysctl --system
-
-## Set kernel commandline
-echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
-"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
-update-initramfs -u
 
 ###################
 ##   O U T R O   ##

@@ -262,6 +262,7 @@ systemctl enable nightly-reboot.timer ## We need to restart daily because this b
 #############################
 ##   S C H E D U L I N G   ##
 #############################
+echo ':: Scheduling tasks...'
 
 function reschedule-timer {
     mkdir -p "/etc/systemd/system/$1.d"
@@ -289,12 +290,18 @@ systemctl daemon-reload
 #########################################################
 ##   A D D I T I O N A L   C O N F I G U R A T I O N   ##
 #########################################################
+echo ':: Configuring miscellania...'
 
 ## Anubis's serial console gets TTY11.
 sudo systemctl enable --now vm-to-tty@anubis:11.service
 
 ## Set a more-restrictive max size for tmpfs
 sed -i 's/size=5G/size=1G/' '/etc/systemd/system/tmp.mount.d/override.conf'
+
+## Set kernel commandline
+echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
+"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
+update-initramfs -u
 
 ## Sysctl
 echo ':: Configuring sysctl...'
@@ -306,11 +313,6 @@ idempotent_append 'kernel.mm.ksm.sleep_millisecs=1000' '/etc/sysctl.d/62-io-twea
 idempotent_append 'vm.dirty_writeback_centisecs=500'   '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'vm.dirty_expire_centisecs=1500'     '/etc/sysctl.d/62-io-tweakable.conf'
 sysctl --system
-
-## Set kernel commandline
-echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
-"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
-update-initramfs -u
 
 ###################
 ##   O U T R O   ##
