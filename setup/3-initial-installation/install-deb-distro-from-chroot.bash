@@ -63,6 +63,7 @@ done
 unset ENV_VARS
 
 echo ':: Declaring variables...'
+export SYSTEMD_OFFLINE=1
 ## Misc local variables
 KERNEL_COMMANDLINE=''
 

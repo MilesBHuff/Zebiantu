@@ -143,7 +143,7 @@ Options=mode=1777,nosuid,nodev,size=5G,noatime
 [Install]
 WantedBy=local-fs.target
 EOF
-systemctl daemon-reload ## May not work from `chroot`, but we have to try because the following command definitely won't work if we don't.
+# systemctl daemon-reload ## Normally required for the below `enable` to work, but `daemon-reload` shouldn't be run from `chroot`. We may actually be fine to skip in our specific situation, since we *have* configured systemd to run in offline mode for this chroot.
 sudo systemctl enable tmp.mount
 mkdir -p /etc/systemd/system/console-setup.service.d
 cat > /etc/systemd/system/console-setup.service.d/override.conf <<'EOF' #BUG: Resolves an upstream issue where console-setup can happen shortly before tmpfs mounts and accordingly fail when tmpfs effectively deletes /tmp while console-setup is happening.
