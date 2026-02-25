@@ -221,6 +221,7 @@ virt-install \
     --vcpus $CORES \
     --cputune shares=$SHARES \
     --network bridge="$BR_ID",model=virtio \
+    --channel unix,target_type=virtio,name=org.qemu.guest_agent.0 \
     --disk path="/dev/zvol/$VDISK",format=raw,bus=virtio,cache=none,discard=unmap \
     --cdrom "$OPNSENSE_ISO" \
     --osinfo "$FREEBSD_VERSION" \
@@ -232,6 +233,7 @@ virt-install \
     --cpu host-passthrough ## Needed to ensure features like AES-NI function optimally.
 echo 'It is now safe to connect any Ethernet interfaces you want the host to own.'
 echo 'In the OPNsense installer’s partitioner, please configure a GUID partition table, an EFI system partition, and a UFS root partition. (Do not use ZFS.)'
+echo 'Once OPNsense is live, install the `os-qemu-guest-agent` package and enable its features.'
 read -rp 'Press "Enter" to install OPNsense inside the VM. To exit, shut the VM down. ' _; unset _
 virsh console anubis
 
