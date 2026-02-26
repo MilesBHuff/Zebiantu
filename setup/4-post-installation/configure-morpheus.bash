@@ -171,7 +171,7 @@ RandomizedDelaySec=$4
 EOF
 }
 
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer" '*-*-1 1:00'          '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_OS.timer" '*-*-1 1:00'          '10m' '0'
 # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
 # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
 reschedule-timer 'fstrim.timer'                       '*-*-7,14,21,28 2:00' '10m' '0'

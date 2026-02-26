@@ -230,12 +230,12 @@ reschedule-timer 'zfstrim.timer' '*-*-7,14,21,28 2:00' '10m' '0'
 # reschedule-timer 'smart-long@.timer' '*-1,5,9-3 1:00' '10m' '0'
 
 ## SCRUBS (will take a long time)
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_OS.timer"  '*-3,7,11-1 1:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_NAS.timer" '*-3,7,11-1 1:00' '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_OS.timer"  '*-3,7,11-1 1:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_NAS.timer" '*-3,7,11-1 1:00' '10m' '0'
 
 ## BACKUP MAINTENANCE
 # reschedule-timer 'smart-short@.timer'                '*-*-15 1:00' '10m' '0'
-reschedule-timer "zfs-scrub@$ENV_ZPOOL_NAME_DAS.timer" '*-*-1 3:00'  '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_DAS.timer" '*-*-1 3:00'  '10m' '0'
 
 ## DONE
 systemctl daemon-reload
