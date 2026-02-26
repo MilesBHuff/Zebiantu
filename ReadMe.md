@@ -135,5 +135,9 @@ These will be implemented once Zebiantu is feature-complete.
 * dracut vs initramfs
     * Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same init. Ubuntu made the switch in 25.10, and Debian plans to in 2027. Zebiantu will not support Ubuntu 26.04 until Debian 14 and Proxmox VE 10 have released.
 
+## Notes
+* Why `sanoid`/`syncoid` instead of `zrepl`?  While `zrepl` *is* technically  superior, its use of YAML over plaintext configs makes it intractable for a shell-based installer such as this.
+* Once I have learned NixOS, I should like to reimplement everything from Zebiantu in Nix. This would enable post-installation settings sync, and it would permit things (like `zrepl`) that are not viable in a shell-based installation system.
+
 ## License
 Copyright © 2025–2026 Miles Bradley Huff. Licensed publicly per the terms of the GNU General Public License (v3.0 or later).
