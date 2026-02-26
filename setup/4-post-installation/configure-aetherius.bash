@@ -265,11 +265,11 @@ EOF
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
 sed -iE           's/^(vm\.swappiness)=[0-9]+$/\1=198/' '/etc/sysctl.d/62-io-tweakable.conf' ## AI-estimated per Aetherius's specific hardware, some moderately-relevant zstd compression benchmarks I ran, and the formula given in `mem-fs.bash`.
-idempotent_append 'kernel.mm.ksm.run=1'                 '/etc/sysctl.d/62-io-tweakable.conf'
-idempotent_append 'kernel.mm.ksm.pages_to_scan=100'     '/etc/sysctl.d/62-io-tweakable.conf'
-idempotent_append 'kernel.mm.ksm.sleep_millisecs=1000'  '/etc/sysctl.d/62-io-tweakable.conf'
-idempotent_append 'vm.dirty_writeback_centisecs=500'    '/etc/sysctl.d/62-io-tweakable.conf'
-idempotent_append 'vm.dirty_expire_centisecs=1500'      '/etc/sysctl.d/62-io-tweakable.conf'
+idempotent_append 'kernel.mm.ksm.run=1'                 '/etc/sysctl.d/62-io-tweakable.conf' ## Useful when running multiple identical services (especially VMs)
+idempotent_append 'kernel.mm.ksm.pages_to_scan=128'     '/etc/sysctl.d/62-io-tweakable.conf' ## n×4 is how many KiB of memory to walk per wakeup.
+idempotent_append 'kernel.mm.ksm.sleep_millisecs=125'   '/etc/sysctl.d/62-io-tweakable.conf' ## I've decided on roughly one page per millisecond, but rounded to a duration that sums to a whole second. I'm using a
+idempotent_append 'vm.dirty_writeback_centisecs=500'    '/etc/sysctl.d/62-io-tweakable.conf' ## Same as ZFS's default `zfs_txg_timeout` — helps ensure we can use a similar mental model for Linux.
+idempotent_append 'vm.dirty_expire_centisecs=1500'      '/etc/sysctl.d/62-io-tweakable.conf' ## Three `zfs_txg_timeout`s — helps ensure we can use a similar mental model for Linux.
 idempotent_append 'vm.dirty_bytes=1250000000'           '/etc/sysctl.d/62-io-tweakable.conf'
 idempotent_append 'vm.dirty_background_bytes=625000000' '/etc/sysctl.d/62-io-tweakable.conf'
 sysctl --system
