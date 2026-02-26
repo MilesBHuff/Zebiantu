@@ -25,7 +25,7 @@ fi; unset DO_IT
 read -rp 'Enter "y" to enable ssh, or "n" to leave it disabled. ' DO_IT
 if [[ "$DO_IT" == 'y' ]]; then
     apt install -y openssh-server
-    sed -Ei 's/^#?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+    idempotent_append 'PermitRootLogin prohibit-password' '/etc/ssh/sshd_config.d/disable-root.conf'
     systemctl enable ssh
 fi; unset DO_IT
 
@@ -38,7 +38,10 @@ case $DISTRO in
     1)
         ## Debian
         apt purge -y ifupdown || true
-        rm -rf '/etc/network/interfaces' || true
+        cat > /etc/network/interfaces <<'EOF'
+auto lo
+iface lo inet loopback
+EOF
         apt install network-manager
         systemctl enable NetworkManager
         # systemctl start NetworkManager ## Shouldn't start/stop from chroot.
@@ -64,6 +67,8 @@ esac
 ## Configure regulatory domain
 echo ':: Configuring Wi-Fi...'
 read -rp 'Please enter your wireless regulatory domain: ("US" for the USA) ' REGDOM
+REGDOM="${REGDOM^^}"
+REGDOM="${REGDOM//[[:space:]]/}"
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE cfg80211.ieee80211_regdom=$REGDOM"
 unset REGDOM
 
@@ -74,7 +79,7 @@ if [[ "$DO_IT" == 'y' ]]; then
     cat > /etc/udev/rules.d/80-rfkill-wifi.rules <<'EOF'
 SUBSYSTEM=="rfkill", ATTR{type}=="wlan", ACTION=="add|change", RUN+="/usr/sbin/rfkill block wifi"
 EOF
-    nmcli radio wifi off
-    nmcli general reload
+    # nmcli radio wifi off ## Shouldn't work in chroot.
+    # nmcli general reload ## Shouldn't work in chroot.
 fi
 unset DO_IT
