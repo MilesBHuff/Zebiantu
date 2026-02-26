@@ -300,11 +300,6 @@ sudo systemctl enable --now vm-to-tty@anubis:11.service
 ## Set a more-restrictive max size for tmpfs
 sed -i 's/size=5G/size=1G/' '/etc/systemd/system/tmp.mount.d/override.conf'
 
-## Set kernel commandline
-echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
-"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
-update-initramfs -u
-
 ## Sysctl
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/62-io-tweakable.conf
@@ -319,6 +314,12 @@ sysctl --system
 ###################
 ##   O U T R O   ##
 ###################
+
+## Set kernel commandline
+echo ':: Setting kernel commandline...'
+echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
+"$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
+update-initramfs -u
 
 ## Wrap up
 echo ':: Creating snapshot...'
