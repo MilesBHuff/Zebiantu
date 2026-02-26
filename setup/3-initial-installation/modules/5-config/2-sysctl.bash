@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #NOTE: This script is a fragment sourced by a parent script running in a `chroot`.
+#NOTE: Many sysctl changes are applied in other scripts before we get to this point; this file is just a grab-bag of tweaks that didn't fit elsewhere.
 echo ':: Configuring sysctl...'
 ### See the following for explanations: https://github.com/MilesBHuff/Dotfiles/blob/master/Linux/etc/sysctl.d/61-io-static.conf
 idempotent_append 'vm.legacy_va_layout=0'            '/etc/sysctl.d/961-io-static.conf'
