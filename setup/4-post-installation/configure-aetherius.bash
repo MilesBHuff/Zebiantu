@@ -52,15 +52,6 @@ KERNEL_COMMANDLINE="$(xargs < "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt")"
 ##   I N I T I A L   C O N F I G   ##
 #####################################
 
-## Configure network
-echo ':: Configuring network...'
-ip addr show
-read -rp "Copy the interface name you want to use, and paste it here; then press 'Enter': " INTERFACE_NAME #TODO: Automate this.
-cat > "/etc/network/interfaces.d/$INTERFACE_NAME.conf" <<EOF
-auto $INTERFACE_NAME
-iface $INTERFACE_NAME inet dhcp
-EOF
-
 echo ':: Installing system-specific things...'
 ## Daemons
 apt install -y nut-server

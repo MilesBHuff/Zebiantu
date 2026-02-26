@@ -77,26 +77,6 @@ if [[ $SECTION -eq 1 ]]; then
     echo ':: Installing base system...'
     apt install -y ubuntu-server
 
-    echo ':: Switching to NetworkManager from networkd...'
-    apt install -y networkmanager ## Just to be safe; should have already installed with the above.
-    mkdir -p /etc/netplan ## Just to be safe.
-    cat > /etc/netplan/99-use-networkmanager.yaml <<EOF
-network:
-version: 2
-renderer: NetworkManager
-EOF
-    systemctl stop systemd-networkd
-    systemctl start NetworkManager
-    netplan apply
-    systemctl enable NetworkManager
-    systemctl disable systemd-networkd
-    # systemctl mask systemd-networkd #TODO: Do we want this masked?
-    # apt purge systemd-networkd ## Also removes the `ubuntu-server` metapackage, which is not a desirable outcome.
-
-    echo ':: Disabling Wi-Fi...'
-    nmcli radio wifi off
-    nmcli general reload
-
     echo ':: Installing system-specific things...'
     ## Daemons
     apt install -y nut-client

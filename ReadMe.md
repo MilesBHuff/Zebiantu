@@ -83,7 +83,6 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Tweaks some settings.
 * `configure-duat`: For my edge router / firewall.
     * Installs various necessary applications.
-    * Switches to NetworkManager.
     * Sets up network interface passthrough.
     * Sets up an OPNsense VM.
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
@@ -92,7 +91,6 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Tweaks some settings.
 * `configure-morpheus`: For my AI inference box.
     * Installs various necessary applications.
-    * Switches to NetworkManager.
     * [WIP] installs various things necessary for running inference (including ROCm).
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Configures auto-restarts (because no ECC).
