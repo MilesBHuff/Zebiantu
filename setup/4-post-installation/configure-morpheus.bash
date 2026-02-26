@@ -206,7 +206,7 @@ echo "$KERNEL_COMMANDLINE" > "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt"
 "$ENV_KERNEL_COMMANDLINE_DIR/set-commandline" ## Sorts, deduplicates, and saves the new commandline.
 update-initramfs -u
 
-## Wrap up
+## Snapshot
 echo ':: Creating snapshot...'
 set +e
 zfs snapshot -r "$ENV_POOL_NAME_OS@install-morpheus"

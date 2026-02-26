@@ -286,7 +286,7 @@ $(declare -p ANUBIS_DIR)
 $(declare -p VDISK)
 EOF
 
-    ## Wrap up
+    ## Snapshot
     echo ':: Creating snapshot...'
     set +e
     zfs snapshot -r "$ENV_POOL_NAME_OS@install-duat"
@@ -385,7 +385,7 @@ EOF
     #########################
     rm -f "$TEMP_ENV_FILE"
 
-    ## Wrap up
+    ## Snapshot
     echo ':: Creating snapshot...'
     set +e
     zfs snapshot -r "$ENV_POOL_NAME_OS@install-anubis"

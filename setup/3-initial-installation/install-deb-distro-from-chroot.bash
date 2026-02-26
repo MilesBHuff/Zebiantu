@@ -88,7 +88,7 @@ done
 ##   O U T R O   ##
 ###################
 
-## Wrap up
+## Snapshot
 echo ':: Creating snapshot...'
 set +e
 zfs snapshot -r "$ENV_POOL_NAME_OS@install-from-chroot"
