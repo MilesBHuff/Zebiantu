@@ -3,22 +3,55 @@
 
 ## Configure swap
 echo ':: Configuring swap...'
+## (Note: I refer to the benchmarks [here](https://github.com/inikep/lzbench/blob/271066457e5f89c78ef186987b03c0ad73404b32/README.md#benchmarks) below as a ballpark. In practice, every machine differs. They for instance quite underestimate my NAS: [the EPYC 9554 is 30.9% slower at single-threading than the 4464P](https://www.cpubenchmark.net/compare/5304vs6073/AMD-EPYC-9554-vs-AMD-EPYC-4464P).)
+##
 ## Putting live swap on ZFS is *very* fraught; don't do it!
 ## Using a swap partition is a permanent loss of disk space, and there is much complexity involved because it must be encrypted — that means mdadm and LUKS beneath it.
 ## Swapping to zram (a compressed RAMdisk) is by *far* the simplest solution *and* its size is dynamic according to need, but it cannot be hibernated to.
 ## Hibernation support can be re-added by creating a temporary swap zvol when hibernation is requested, and removing it after resuming. (This is implemented in `boot/hibernation.bash`.)
 ## (In principle, because this swap zvol's size is dynamically allocated according to current memory usage, this actually gives a stronger guarantee of being able to hibernate than many fixed-size swap partitions.)
+##
 ## Because RAM is not plentiful, we want to compress swap so that we can store as much as possible; but high compression has a non-negligible cost when swapping in and out frequently.
 ## zswap is an optional intermediate cache between RAM and the actual swap device, with its own compression settings.
-## When enabled, zswap contains things which were recently swapped-out, and so are most-likely to be swapped back in; while the zram then holds stuff that has been cold for a long time.
+## When enabled, zswap contains things which were recently swapped-out, and so are most-likely to be swapped back in; while the actual swap then holds stuff that has been cold for a while.
 ## This situation allows us to use heavier compression for the zram for maximum swap size, without risking a corresponding performance hit during swap thrashing.
-## For zswap, then, we want to use the lightest reasonable compression algorithm.
-## The main downside is that, when things move from zswap to the zram, they must first be decompressed before being recompressed. That's not a big deal, though, since only particularly cold pages should ever make it to the zram.
+## When data is flushed from zswap to the real swap device, it is first decompressed. While this does mean that each hop now needs decompression *and* compression, decompression is an order of magnitude faster; so in practice, latency is overwhelmingly dominated by compression, and decompression costs can largely be ignored.
+## For zswap, then, we want to use the lightest reasonable compression algorithm: lz4, which compresses to 47.60% at 577MB/s in lzbench's sample results.
+##
+## In my tests, a well-sized (17%) zswap prevented all churn at the zram swap level. This means that zram swap can have a relatively high compression level.
+## However, in situations of near-total RAM+swap use, I am not convinced that the zram swap will *never* see churn. So it still needs to be fast-enough to handle reclaim storms at a reasonable rate.
+## For this, I feel the following is probably the best value: zstd-1, which compresses to 34.64% at 422MB/s in lzbench's sample results.
+##
+## We can go further, though. On any system with swap, there will always be some very cold pages that almost never need to be accessed. We can afford to compress these heavily.
+## On modern kernels (5.19+), zram swap allows you to configure any block device as a writeback target for it. There is nothing saying we can't use a second normal (non-swap) zram device as this target.
+## This gives us a third and final tier in our RAM compression hierarchy: zstd-5, which compresses to 29.74% at 125MB/s in lzbench's sample results.
+## Note: In Linux 7.0+, zram swap no longer decompresses before writeback; in versions prior, it does. This means the decompression cost is skipped entirely outside of the initial zswap -> zram swap step.
+## Also note: Writeback is not on a true LRU basis like zswap and swap are. It's still important therefore to catch churn *before* the zram swap layer... which we are doing via zswap.
+##
+## But we can go further, still! We can give our zram writeback device its own writeback device... in the form of a zvol.
+## Almost none of the usual concerns around swapping to a zvol apply in this scenario. So if it helps avoid an OOM killer, it's worth doing.
+## The compression level on this zvol can be even higher than zstd-5, since every increase in compression reduces how much data must be physically written, thereby speeding up I/O.
+## In my own compression tests to my actual pool, even zstd-19 was still 288MB/s *in terms of how much equivalent uncompressed data was being written*. Now, granted, I have a CPU with 50% better single-thread performance than the lzbench benchmark, but that's in spite of ZFS's compression algorithms being older and slower than the ones in lzbench!
+## So unless your CPU is weak, I would lean toward maxing the compression ratio on this zvol, since it gives you seriously more virtual memory without tanking performance.
+##
+## The next question is one of sizing.
 ## We need to leave enough free RAM to where the system does not experience severe memory pressure (which tends to happen around *roughly* 80% utilization).
-## 70% is about the absolute highest I would think that we can realistically go for zswap + zram, since that allows 10% for normal system use before memory pressure becomes inescapably severe.
-## With a 70% dedication, we can use zswap and zram swap's default allocations: 20% and 50%, respectively.
-## In modern kernels (5.19+), you can additionally specify a backing device for zram swap; this lets us have a 4-tiered swapping solution: RAM, lz4 zswap, zstd-2 zram swap, disk.
-## While normally it is very unwise to swap to a zvol, having a zvol as a very cold writeback device behind your main RAM-based swap device is *probably* fine, and in any case is preferrable to running out of memory.
+## 75% is the absolute highest I would think that we can realistically go for zswap + zram swap + zram writeback, since going any higher forces the system into constant inescapable severe memory pressure and starts risking the OOM killer.
+## Unfortunately, with ZFS, going for 75% is untenable: the ARC *will not swap* and is already compressed. So whatever percents we choose to go with *must* allow ARC *plus* live system memory to fit in uncompressed RAM.
+## That may seem to beg the question of "Do we also need to cap ARC?", but I don't think we do: it will already dynamically shrink to avoid pressuring the system. So as our compressed memory tiers grow, ARC will shrink to accomodate them. Leaving ARC uncapped allows ARC to take advantage of when your RAM+swap usage is low, which may be all or most of the time.
+## I know from experience that 17% (1/6 of RAM) for zswap works very well at catching churn. I suspect that 17% is likely to also be a good value to use for the very cold pages.
+## That leaves 17% or 33% for the main-stage zram swap, depending on how much room must remain for system + ARC (50% or 33%).
+## As I am perennially short on RAM and ARC is not essential for performance with my storage topologies, I am opting for a zram swap of 33%, thus bringing my total compressed RAM to 67% of total system memory, leaving only 11GB for ARC + system on my NAS.
+## We probably don't want the zvol writeback device to be huge, since it is functionally a permanent reduction in usable disk space, and since going too large would encourage using so much RAM that the supposed-to-be-cold tiers start to become warm.
+## I suggest therefore that 12.5% of RAM be allocated to the zvol device — a nice, round number guaranteed to be so small as to be negligible in disk-space cost yet still tremendous in value as virtual memory expansion.
+##
+## What this comes out to, is that a system with 32GB of physical memory has effectively ***roughly*** 96GB of useable memory... which is kinda bonkers, and very welcome in a world where RAM is scarce and expensive.
+##
+## Note that this can significantly increase the damage done by bit-flips in systems without ECC, since each single flip can now corrupt an entire compressed page of memory in one go.
+## (Bit-fips are a real concern: on systems with 128GB of RAM, 1–2 bit-flips per day is actually *expected*.)
+## The flip-side, however, is that zram actually *improves* memory safety *overall*, because zstd is checksummed. (Normally, non-ECC memory has almost no way to know if there was corruption.)
+##
+## For devices weak on CPU, I would suggest *not* using the in-RAM writeback tier, increasing zram swap to cover that allocation, and configuring the on-disk writeback tier to have the same compression level as the zram swap or if Linux 7.0+ to have no compression.
 ##
 ## I have used a more-conservative version of this profile (17% zswap, 33% zram swap, no writeback device) in two systems that operate under intense memory pressure:
 ## * a laptop from 2012 being asked to run modern Firefox all day long
@@ -30,9 +63,9 @@ echo ':: Configuring swap...'
 ## * `free -h` has significant free memory and page cache
 ## All in spite of the fact that that server has so little RAM that it physically cannot run without hundreds of MiB of swap usage.
 ##
-KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=20 zswap.compressor=lz4 zswap.zpool=zsmalloc zswap.same_filled_pages_enabled=1" #NOTE: Fractional percents (eg, `12.5`) are not possible.
+KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE zswap.enabled=1 zswap.max_pool_percent=17 zswap.compressor=lz4 zswap.zpool=zsmalloc zswap.same_filled_pages_enabled=1" #NOTE: Fractional percents (eg, `12.5`) are not possible.
 ## This uses the same settings used in `boot/hibernation.bash`; look there for explanations on why they were chosen.
-declare -i WRITEBACK_GiB=4
+declare -i WRITEBACK_GiB=$(awk '/MemTotal/ {print int((int($2/1024/1024+0.5)/8)+0.5)}' '/proc/meminfo') ## Sets to 1/8 of total system memory, rounded to the nearest whole GiBs.
 zfs create \
     -V ${WRITEBACK_GiB}G \
     -o refreservation=${WRITEBACK_GiB}G \
@@ -40,27 +73,41 @@ zfs create \
     -o sync=disabled \
     -o primarycache=metadata \
     -o secondarycache=none \
-    -o compression=off \
+    -o compression=zstd-19 \
     -o com.sun:auto-snapshot=false \
     "$ENV_POOL_NAME_OS/zram-writeback"
 apt install -y systemd-zram-generator
-
 ## Yes, I know that `zram-fraction` is redundant when using `zram-size`; I'm just setting it and `max-zram-size` (which must be disabled else `zram-size` is ignored) to cleanly override the defaults for `[zram0]`.
 cat > '/etc/systemd/zram-generator.conf.d/zram0.conf' <<EOF
 [zram0]
 fs-type = swap
 swap-priority = 32767
-compression-algorithm = zstd(level=2)
+compression-algorithm = zstd(level=1)
 max-zram-size = none
-zram-fraction = 0.5
-zram-size = ram / 2
+zram-fraction = 0.3333333333333333
+zram-size = ram / 3
+writeback-device = /dev/zram1
+EOF
+cat > '/etc/systemd/zram-generator.conf.d/zram1.conf' <<EOF
+[zram1]
+fs-type = none
+compression-algorithm = zstd(level=5)
+max-zram-size = none
+zram-fraction = 0.1666666666666667
+zram-size = ram / 6
 writeback-device = /dev/zvol/$ENV_POOL_NAME_OS/zram-writeback
 EOF
-## This override ensures that the writeback device is ready before we start the zram swap device.
+## These overrides ensure that each writeback device is ready before we start its zram swap device.
 cat > '/etc/systemd/system/systemd-zram-setup@zram0.service.d/override.conf' <<EOF
 [Unit]
-Wants=zfs-import.target
-After=zfs-import.target
+Requires=systemd-zram-setup@zram1.service
+After=systemd-zram-setup@zram1.service
+ConditionPathExists=/dev/zram1
+EOF
+cat > '/etc/systemd/system/systemd-zram-setup@zram1.service.d/override.conf' <<EOF
+[Unit]
+Requires=zfs.target zfs-import.target
+After=zfs.target zfs-import.target
 RequiresMountsFor=/dev/zvol
 ConditionPathExists=/dev/zvol/$ENV_POOL_NAME_OS/zram-writeback
 EOF
@@ -74,9 +121,10 @@ EOF
 cat > '/etc/systemd/zram-generator.conf.d/run.conf' <<'EOF'
 ## /run
 ## This is mounted as tmpfs extremely early, before generators run; consequently, it is not possible to use zram for it (at least not in *this* way).
+## Also: You don't *want* to *anyway*, because compression DRAMATICALLY slows RAM.
 EOF
 ## This is a sample zram device. (Useful if you need to declare one later.)
-cat > '/etc/systemd/zram-generator.conf.d/zram1.conf' <<'EOF'
+cat > '/etc/systemd/zram-generator.conf.d/zram2.conf' <<'EOF'
 ## Example general-purpose zram device
 # [zram2]
 # zram-size = 1G

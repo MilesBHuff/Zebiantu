@@ -125,10 +125,15 @@ EOF
     #########################################################
     ##   A D D I T I O N A L   C O N F I G U R A T I O N   ##
     #########################################################
-    echo ':: Configuring miscellania...'
 
+    echo ':: Configuring memory...'
     ## Set a more-restrictive max size for tmpfs
     sed -i 's/size=5G/size=1G/' '/etc/systemd/system/tmp.mount.d/override.conf'
+    ## Disable high-compression zram writeback devices
+    sed -i 's/writeback-device = \/dev\/zram1//' '/etc/systemd/zram-generator.conf.d/zram0.conf'
+    rm -f '/etc/systemd/zram-generator.conf.d/zram1.conf'
+    rm -rf '/etc/systemd/system/systemd-zram-setup@zram0.service.d'
+    rm -rf '/etc/systemd/system/systemd-zram-setup@zram1.service.d'
 
     ## Sysctl
     echo ':: Configuring sysctl...'
