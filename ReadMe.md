@@ -49,7 +49,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `zfs`: Configures the system to utilize ZFS.
         * `fs`: Configures the system to utilize additional filesystems.
         * `maintenance`: Configures periodic trim, scrub, SMART, etc.
-        * `snapshots`: Configures regularly taking and pruning snapshots with timescales appropriate to workload.
+        * `snapshots`: Configures regularly taking and pruning snapshots with timescales appropriate to workload.‡
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
         * `fhs`: Tweaks the system's filesystem hierarchy.
         * `memory`: Configures system memory: sets up various memory-based filesystems, like `/tmp` and swap; and **configures a tiered memory compression scheme with lighter compression for hotter pages and heavier compression for colder pages, thus expanding total effective memory by as much as practical.**
@@ -69,7 +69,8 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `sysctl`: Various sysctl tweaks. Improves security, reduces logspam, and improves I/O performance.
         * `commandline`: Configures the kernel commandline, taking care to organize and deduplicate the arguments provided by the other modules.
 
-*† Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.*
+* *† Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.*
+* *‡ If you convert to Proxmox, try to avoid using Proxmox's builtin snapshotting feature; let `sanoid`/`syncoid` handle everything.*
 
 #### post-installation
 Scripts that tailor an initial install to a specific machine and use-case. At present, there are three:
@@ -79,7 +80,6 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Sets up the TRNG
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Schedule maintenance tasks for specific times.
-    * Disables Sanoid in favor of Proxmox's builtin solution.
     * Tweaks some settings.
 * `configure-duat`: For my edge router / firewall.
     * Installs various necessary applications.
@@ -96,10 +96,6 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Configures auto-restarts (because no ECC).
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
-
-Note: Some things must be done manually via Proxmox's UI after running `configure-aetherius`:
-* Configure automatic snapshotting.
-* Configure automatically pulling snapshots from `duat` and `morpheus`.
 
 #### conversion
 Scripts that convert Debian / Ubuntu into a derivative.
@@ -134,6 +130,7 @@ These will be implemented once Zebiantu is feature-complete.
     * Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same init. Ubuntu made the switch in 25.10, and Debian plans to in 2027. Zebiantu will not support Ubuntu 26.04 until Debian 14 and Proxmox VE 10 have released.
 
 ## Notes
+* Initially, these scripts supported only Debian, as I was using them just to set up Proxmox VE on a fully-encrypted and SecureBoot-secured root. But as my needs grew, I had to expand the scripts to support Ubuntu Server (which has better ZFS support than raw Debian), as I have several machines that need ZFS but do not need Proxmox. After writing these scripts, I have come to realize that I do not actually need Proxmox; I'm already doing everything it does, but manually. And so, arguably, it is best for me *now* to standardize on Ubuntu Server and drop support for Debian and Proxmox; but I've already done the work to implement Debian support, and I like that these scripts give you the option to choose for yourself which to use; so at least for the *present*, I plan to continue supporting Debian, but I will drop that support when a technical divergence between Ubuntu and Debian makes continuing to support both excessively complex.
 * Why `sanoid`/`syncoid` instead of `zrepl`?  While `zrepl` *is* technically  superior, its use of YAML over plaintext configs makes it intractable for a shell-based installer such as this.
 * Once I have learned NixOS, I should like to reimplement everything from Zebiantu in Nix. This would enable post-installation settings sync, and it would permit things (like `zrepl`) that are not viable in a shell-based installation system.
 

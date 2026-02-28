@@ -3,7 +3,7 @@ set -euo pipefail; shopt -s nullglob
 function helptext {
     echo "Usage: configure-aetherius.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Aetherius (using Debian).'
+    echo 'This is a one-shot script that finishes setting up Aetherius (using Ubuntu Server).'
     echo 'Aetherius is a NAS and home server running on a custom-built computer.'
 }
 ## Special thanks to ChatGPT for helping with my endless questions.
@@ -41,7 +41,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
     ENV_POOL_NAME_OS
 load_envfile "$ENV_SETUP_ENVFILE" \
-    DEBIAN_VERSION \
+    UBUNTU_VERSION \
     ENV_KERNEL_COMMANDLINE_DIR
 
 echo ':: Declaring variables...'
@@ -58,13 +58,13 @@ apt install -y nut-server
 systemctl enable nut-server
 systemctl enable nut-monitor
 ## Drivers
-apt install -y amd64-microcode firmware-amd-graphics firmware-mellanox firmware-realtek
+apt install -y amd64-microcode linux-firmware
 ## Filesystems
 apt install -y btrfs-progs e2fsprogs ntfs-3g
 ## Tools
 apt install -y ipmitool openseachest photorec testdisk wipefs
 ## Controllers
-apt install -y -t "$DEBIAN_VERSION-backports" openrgb
+apt install -y -t "$UBUNTU_VERSION-backports" openrgb
 
 #################################################
 ##   P R O P R I E T A R Y   S O F T W A R E   ##
@@ -89,7 +89,7 @@ fi
 SOURCES_FILE='/etc/apt/sources.list.d/ofed.list'
 if [[ ! -f "$SOURCES_FILE" ]]; then
     OFED_VERSION='latest'
-    DISTRO_VERSION='Debian12.5' #FIXME: We're on Debian 13 Trixie, but Nvidia hasn't shipped for that yet.
+    DISTRO_VERSION='Ubuntu24.04' #NOTE: This must be manually changed when we someday update to a newer version of Ubuntu.
     SOURCES_FILE='/etc/apt/sources.list.d/ofed.list'
     KEYRING='/usr/share/keyrings/ofed.gpg'
     wget -qO- 'https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox' | gpg --dearmor > "$KEYRING"
@@ -145,7 +145,7 @@ cd "$CWD"
 
 ## Set up TRNG
 echo ':: Set up TRNG...'
-#NOTE: This installs Debian's official version in order to pull in dependencies, and then overrides it with a locally-compiled version. (The one shipped with Debian as of 2025-06-12 (0.3.3) is missing a critical patch that tells that CPU to reseed. Without this, the extra entropy is mostly wasted.)
+#NOTE: This installs the distro's official version in order to pull in dependencies, and then overrides it with a locally-compiled version. (The one shipped with Debian as of 2025-06-12 (0.3.3) is missing a critical patch that tells that CPU to reseed. Without this, the extra entropy is mostly wasted.)
 apt install -y infnoise
 systemctl disable infnoise
 # KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE random.trust_cpu=off" ## No need to use RDSEED/RDRAND when you have a trusted TRNG, with the exception of at early boot; then again, early boot is the only time this matters and the only time this TRNG isn't used, so... probably best to leave enabled.
@@ -282,4 +282,4 @@ zfs snapshot -r "$ENV_POOL_NAME_OS@install-aetherius"
 set -e
 
 ## Done
-exec ./convert-debian-to-proxmox.bash
+exit 0
