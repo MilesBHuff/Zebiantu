@@ -52,7 +52,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
         * `snapshots`: Configures regularly taking and pruning snapshots with timescales appropriate to workload.‡
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
         * `fhs`: Tweaks the system's filesystem hierarchy.
-        * `memory`: Configures system memory: sets up various memory-based filesystems, like `/tmp` and swap; and **configures a tiered memory compression scheme with lighter compression for hotter pages and heavier compression for colder pages, thus expanding total effective memory by as much as practical.**
+        * `memory`: Configures system memory: sets up various memory-based filesystems, like `/tmp` and swap; and **configures a tiered memory compression scheme with lighter compression for hotter pages and heavier compression for colder pages, thus roughly tripling available memory.**
     * `boot`: Configure the boot chain. The end-result is strongly resistant to Evil-Maid attacks, and the overall architecture is much-more-elegant than anything shipping today (early 2026). And because it's based around ZFSBootMenu, it is easy to recover from any issues: Just put a vanilla ZBM image on a flash drive, temporarily disable SecureBoot, manually type your password, and fix the issue.
         * `esp-with-zbm.bash`: Sets up an ESP containing a custom ZFSBootMenu image that unlocks **a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
         * `secureboot-with-zbm.bash`: **Sets up SecureBoot using *only* self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
