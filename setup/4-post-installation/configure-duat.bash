@@ -200,7 +200,7 @@ EOF
     systemctl restart NetworkManager
 
     ## Use a firewall rule to ensure the host does not use the passed-through interfaces.
-    cat > /etc/nftables.conf <<EOF #AI
+    cat > '/etc/nftables.conf' <<EOF #AI
 #!/usr/sbin/nft -f
 flush ruleset
 table inet filter {
@@ -228,6 +228,8 @@ table inet filter {
     }
 }
 EOF
+    sed -i 's/firewallcmd-rich-rules/nftables-multiport/' '/etc/fail2ban/jail.local'
+    systemctl disable --now firewalld
     systemctl enable --now nftables
 
     ## Create virtual network interface so that the host can conect via the guest.

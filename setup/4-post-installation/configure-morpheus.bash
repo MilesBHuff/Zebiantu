@@ -163,6 +163,10 @@ systemctl daemon-reload
 #########################################################
 ##   A D D I T I O N A L   C O N F I G U R A T I O N   ##
 #########################################################
+echo ':: Configuring miscellania...'
+
+## This computer lives inside an Intranet, behind an edge firewall.
+firewall-cmd --set-default-zone=internal
 
 ## Sysctl
 echo ':: Configuring sysctl...'

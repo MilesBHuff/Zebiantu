@@ -12,6 +12,12 @@ cat > '/etc/hosts' <<EOF
 127.0.1.1 $HOSTNAME.home.arpa $HOSTNAME
 EOF
 
+## Switch to firewalld
+echo ':: Configuring firewall...'
+apt install firewalld
+[[ $DISTRO -eq 2 ]] && systemctl disable ufw || true
+systemctl enable firewalld #NOTE: No `--now` because we're in a chroot.
+
 ## Configure WOL
 read -rp 'Enter "y" to enable Wake-On-LAN, or "n" to leave it disabled. ' DO_IT
 if [[ "$DO_IT" == 'y' ]]; then
@@ -36,7 +42,7 @@ cat > '/etc/fail2ban/jail.local' <<'EOF'
 backend = systemd
 findtime = 10m
 maxretry = 5
-banaction = nftables-multiport
+banaction = firewallcmd-rich-rules
 bantime = 1h
 bantime.increment = true
 bantime.factor = 2
@@ -83,14 +89,13 @@ EOF
         ;;
 esac
 
-## Configure regulatory domain
 echo ':: Configuring Wi-Fi...'
+## Configure regulatory domain
 read -rp 'Please enter your wireless regulatory domain: ("US" for the USA) ' REGDOM
 REGDOM="${REGDOM^^}"
 REGDOM="${REGDOM//[[:space:]]/}"
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE cfg80211.ieee80211_regdom=$REGDOM"
 unset REGDOM
-
 ## Disable Wi-Fi
 read -rp 'Enter "y" to disable Wi-Fi or "n" to leave it untouched. ' DO_IT
 if [[ "$DO_IT" == 'y' ]]; then

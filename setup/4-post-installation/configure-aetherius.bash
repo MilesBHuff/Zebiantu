@@ -236,6 +236,9 @@ systemctl daemon-reload
 #########################################################
 echo ':: Configuring miscellania...'
 
+## This computer lives inside an Intranet, behind an edge firewall.
+firewall-cmd --set-default-zone=internal
+
 ## Ensure that the NAS is snapshotted and the backup is not
 cat >> '/etc/sanoid/sanoid.conf' <<EOF
 

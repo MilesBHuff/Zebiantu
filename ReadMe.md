@@ -43,7 +43,7 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
     * `base`: Set up the basic features of the operating system.
         * `apt`: Configures `apt` and `full-upgrade`s the system, to avoid any partial upgrades during installation.
         * `foundations`: Installs things that are foundational to the system and the rest of the script.
-        * `networking`: Configures networking.
+        * `networking`: Configures networking. Notably: standardizes on NetworkManager and firewalld.
         * `config`: Various mostly-interactive system configurations — the typical stuff you deal with when installing a new operating system.
     * `fs`: Configure filesystems.
         * `zfs`: Configures the system to utilize ZFS.
