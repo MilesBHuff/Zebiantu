@@ -29,6 +29,25 @@ if [[ "$DO_IT" == 'y' ]]; then
     systemctl enable ssh
 fi; unset DO_IT
 
+## Set up fail2ban
+apt install -y fail2ban
+cat > '/etc/fail2ban/jail.local' <<'EOF'
+[DEFAULT]
+backend = systemd
+findtime = 10m
+maxretry = 5
+banaction = nftables-multiport
+bantime = 1h
+bantime.increment = true
+bantime.factor = 2
+bantime.max = 24h
+
+[sshd]
+enabled = true
+port = ssh
+#logpath = /var/log/secure
+EOF
+
 ## Switch to NetworkManager
 echo ':: Switching to NetworkManager...'
 echo 'Static IPs should be defined in your Layer 3 switch, not at the client level.'
