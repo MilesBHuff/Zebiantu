@@ -53,10 +53,6 @@ KERNEL_COMMANDLINE="$(xargs < "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt")"
 #####################################
 
 echo ':: Installing system-specific things...'
-## Daemons
-apt install -y nut-server
-systemctl enable nut-server
-systemctl enable nut-monitor
 ## Drivers
 apt install -y amd64-microcode linux-firmware
 ## Filesystems

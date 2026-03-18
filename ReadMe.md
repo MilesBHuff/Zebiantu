@@ -78,24 +78,25 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Installs various necessary applications
     * Installs proprietary software for applicable enterprise hardware
     * Sets up the TRNG
-    * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-duat`: For my edge router / firewall.
     * Installs various necessary applications.
     * Sets up network interface passthrough.
     * Sets up an OPNsense VM.
-    * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Configures auto-restarts (because no ECC).
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-morpheus`: For my AI inference box.
     * Installs various necessary applications.
     * [WIP] installs various things necessary for running inference (including ROCm).
-    * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
     * Configures auto-restarts (because no ECC).
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
+* `configure-ups-client`:
+    * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
+* `configure-ups-server`:
+    * [WIP] Configures control over the UPS.
 
 #### conversion
 Scripts that convert Debian / Ubuntu into a derivative.

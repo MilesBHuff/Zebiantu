@@ -78,9 +78,6 @@ if [[ $SECTION -eq 1 ]]; then
     apt install -y ubuntu-server
 
     echo ':: Installing system-specific things...'
-    ## Daemons
-    apt install -y nut-client
-    systemctl enable nut-client
     ## Drivers
     apt install -y intel-microcode firmware-intel-graphics firmware-realtek
 

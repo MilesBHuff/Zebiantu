@@ -63,9 +63,6 @@ systemctl set-default multi-user.target
 systemctl disable gdm3
 
 echo ':: Installing system-specific things...'
-## Daemons
-apt install -y nut-client
-systemctl enable nut-client
 ## Drivers
 apt install -y amd64-microcode firmware-amd-graphics firmware-realtek
 ## Controllers
