@@ -5,7 +5,7 @@
 echo ':: Installing ZFS...'
 case $DISTRO in
     1) apt install -y -t "$DEBIAN_VERSION-backports" zfsutils-linux zfs-zed zfs-dkms ;;
-    2) apt install -y -t "$UBUNTU_VERSION-backports" zfsutils-linux zfs-zed ;;
+    2) apt install -y zfsutils-linux zfs-zed ;;
 esac
 ZFS_VERSION="$(zfs --version | head -n1 | cut -c5-)"
 dpkg --compare-versions "$ZFS_VERSION" lt 2.2 && idempotent_append 'REMAKE_INITRD=yes' '/etc/dkms/zfs.conf' ## Needed on ZFS < 2.2, deprecated on ZFS >= 2.2

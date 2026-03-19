@@ -8,7 +8,7 @@ Why go to such lengths? Well, a number of core reasons:
 
 ## Dependencies
 * Zebiantu is designed to utilize either Debian 13 "Trixie" or Ubuntu 24.04 "Noble Numbat" as its base.
-* Zebiantu is built around ZFS 2.3.
+* Zebiantu is *intended* to run the latest version of ZFS reasonably available (v2.4 at the time of writing). The only way to accomplish this is to use Debian, as it has a backports repo that contains both ZFS and the Linux kernel. Ubuntu runs the version of ZFS that it runs, so it is discouraged to base Zebiantu on Ubuntu unless you absolutely need to and are able to forgo having the latest ZFS features.
 
 ## Directories
 
@@ -131,7 +131,6 @@ These will be implemented once Zebiantu is feature-complete.
     * Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same init. Ubuntu made the switch in 25.10, and Debian plans to in 2027. Zebiantu will not support Ubuntu 26.04 until Debian 14 and Proxmox VE 10 have released.
 
 ## Notes
-* Initially, these scripts supported only Debian, as I was using them just to set up Proxmox VE on a fully-encrypted and SecureBoot-secured root. But as my needs grew, I had to expand the scripts to support Ubuntu Server (which has better ZFS support than raw Debian), as I have several machines that need ZFS but do not need Proxmox. After writing these scripts, I have come to realize that I do not actually need Proxmox; I'm already doing everything it does, but manually. And so, arguably, it is best for me *now* to standardize on Ubuntu Server and drop support for Debian and Proxmox; but I've already done the work to implement Debian support, and I like that these scripts give you the option to choose for yourself which to use; so at least for the *present*, I plan to continue supporting Debian, but I will drop that support when a technical divergence between Ubuntu and Debian makes continuing to support both excessively complex.
 * Why `sanoid`/`syncoid` instead of `zrepl`?  While `zrepl` *is* technically  superior, its use of YAML over plaintext configs makes it intractable for a shell-based installer such as this.
 * Once I have learned NixOS, I should like to reimplement everything from Zebiantu in Nix. This would enable post-installation settings sync, and it would permit things (like `zrepl`) that are not viable in a shell-based installation system.
 

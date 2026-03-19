@@ -3,7 +3,7 @@ set -euo pipefail; shopt -s nullglob
 function helptext {
     echo "Usage: configure-duat.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Duat (using Ubuntu).'
+    echo 'This is a one-shot script that finishes setting up Duat (using Debian).'
     echo 'Duat is the host for Anubis, an OPNsense guest VM acting as a firewall and edge router.'
     echo 'It runs on a BeeLink with an Intel N100, a 128G RAID1 array of two single-lane NVMes, and 16G of non-ECC DDR5 SODIMM memory.'
     echo
@@ -53,7 +53,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
     ENV_POOL_NAME_OS
 load_envfile "$ENV_SETUP_ENVFILE" \
-    UBUNTU_VERSION \
+    DEBIAN_VERSION \
     ENV_KERNEL_COMMANDLINE_DIR
 
 echo ':: Declaring variables...'
@@ -74,12 +74,9 @@ if [[ $SECTION -eq 1 ]]; then
     ##   I N I T I A L   C O N F I G   ##
     #####################################
 
-    echo ':: Installing base system...'
-    apt install -y ubuntu-server
-
     echo ':: Installing system-specific things...'
     ## Drivers
-    apt install -y intel-microcode firmware-intel-graphics firmware-realtek
+    apt install -y intel-microcode firmware-linux firmware-linux-nonfree firmware-misc-nonfree firmware-intel-graphics firmware-realtek
 
     #################################
     ##   P O W E R   O N / O F F   ##

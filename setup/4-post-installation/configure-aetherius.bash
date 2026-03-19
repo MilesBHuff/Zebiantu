@@ -3,7 +3,7 @@ set -euo pipefail; shopt -s nullglob
 function helptext {
     echo "Usage: configure-aetherius.bash"
     echo
-    echo 'This is a one-shot script that finishes setting up Aetherius (using Ubuntu Server).'
+    echo 'This is a one-shot script that finishes setting up Aetherius (using Debian).'
     echo 'Aetherius is a NAS and home server running on a custom-built computer.'
 }
 ## Special thanks to ChatGPT for helping with my endless questions.
@@ -41,7 +41,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
     ENV_POOL_NAME_OS
 load_envfile "$ENV_SETUP_ENVFILE" \
-    UBUNTU_VERSION \
+    DEBIAN_VERSION \
     ENV_KERNEL_COMMANDLINE_DIR
 
 echo ':: Declaring variables...'
@@ -54,13 +54,13 @@ KERNEL_COMMANDLINE="$(xargs < "$ENV_KERNEL_COMMANDLINE_DIR/commandline.txt")"
 
 echo ':: Installing system-specific things...'
 ## Drivers
-apt install -y amd64-microcode linux-firmware
+apt install -y amd64-microcode firmware-linux firmware-linux-nonfree firmware-misc-nonfree
 ## Filesystems
 apt install -y btrfs-progs e2fsprogs ntfs-3g
 ## Tools
-apt install -y ipmitool openseachest photorec testdisk wipefs
+apt install -y ipmitool openseachest photorec testdisk util-linux
 ## Controllers
-apt install -y -t "$UBUNTU_VERSION-backports" openrgb
+apt install -y -t "$DEBIAN_VERSION-backports" openrgb
 
 #################################################
 ##   P R O P R I E T A R Y   S O F T W A R E   ##
@@ -69,7 +69,7 @@ apt install -y -t "$UBUNTU_VERSION-backports" openrgb
 ## Install STORCLI 3.5 P34
 if [[ ! -d '/opt/MegaRAID/storcli' ]]; then
     read -rp 'After you have downloaded and extracted STORCLI to the appropriate directory in this repo, press "Enter". ' _; unset _
-    cd "$ROOT_DIR/software/STORCLI/Ubuntu"
+    cd "$ROOT_DIR/software/STORCLI/Ubuntu" ## Yes, it's branded "Ubuntu" but it works fine on Debian, and there is no Debian-specific binary available for this anyway.
     ./install.sh
 fi
 
@@ -85,7 +85,7 @@ fi
 SOURCES_FILE='/etc/apt/sources.list.d/ofed.list'
 if [[ ! -f "$SOURCES_FILE" ]]; then
     OFED_VERSION='latest'
-    DISTRO_VERSION='Ubuntu24.04' #NOTE: This must be manually changed when we someday update to a newer version of Ubuntu.
+    DISTRO_VERSION='Debian12.5' #NOTE: This is the highest version currently offered by the repo. Its mismatch with our actual Debian version (13) is fine because we're not depending on any kernel integrations.
     SOURCES_FILE='/etc/apt/sources.list.d/ofed.list'
     KEYRING='/usr/share/keyrings/ofed.gpg'
     wget -qO- 'https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox' | gpg --dearmor > "$KEYRING"
@@ -99,7 +99,7 @@ EOF
     apt install -y mft mlnx-fw-updater mlnx-tools mlnx-ethtool
 
     ## Only install MFT's DKMS extension if our system can't talk to our Mellanox card natively.
-    if ! mlxconfig -d "$(lspci -Dn | awk '/15b3/ {print $1; exit}')" q >/dev/null 2>&1; then #AI #WARN: Only checks the first Mellanox card. That's fine for this server, because we only have the one.
+    if ! mlxconfig -d "$(lspci -Dn | awk '/15b3/ {print $1; exit}')" q >/dev/null 2>&1; then #NOTE: This line was written by AI. #WARN: Only checks the first Mellanox card. That's fine for this server, because we only have the one.
         apt install -y kernel-mft-dkms
         systemctl enable --now mst
     fi
