@@ -1,8 +1,8 @@
-# Zebiantu — a `.deb` distro spin
-This repo contains a series of scripts that install Debian/Ubuntu and configure it to meet my needs. The divergence is sufficiently great that this constitutes a custom spin of those distros, one I am terming "Zebiantu" — a blend of "**Z**FS", "D**ebia**n", and "Ubu**ntu**".
+# Zebiantu
+**Zebiantu** — named for its primary parentage, **Z**FS, D**ebia**n, and Ubu**ntu** — is a series of interactive, modular scripts that comprise a holistic, ZFS-first installer and configurator for Debian and Ubuntu. Because Zebiantu is not designed for mass-market adoption, it can make fewer compromises on system architecture than Debian/Ubuntu do stock; consequently, and in the process of putting ZFS first, it diverges quite a bit from their default configurations.
 
 Why go to such lengths? Well, a number of core reasons:
-* Ubuntu and multiple Debian derivatives have first-class ZFS support, and nothing else does. I want Linux and I want ZFS; this effectively pigeonholes me here.
+* Ubuntu and multiple Debian derivatives have first-class ZFS support, and no other Linux distro does. I want Linux and I want ZFS; this effectively pigeonholes me here for the time-being.
 * The stock distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure. Yet, there is no reason for them to be: ZFSBootMenu allows encrypted root-on-ZFS (`/boot` included), UEFI allows exclusively using your own custom keys instead of Microsoft's, and TPM auto-unlocking exists and can be used if appropriate.
 * A setup that is not scripted is a setup that is not documented or reproducible. There are so many things that need configuring when you are earnestly setting up a ZFS-based system that it would be foolish to proceed without scripting it.
 
@@ -134,5 +134,11 @@ These will be implemented once Zebiantu is feature-complete.
 * Why `sanoid`/`syncoid` instead of `zrepl`?  While `zrepl` *is* technically  superior, its use of YAML over plaintext configs makes it intractable for a shell-based installer such as this.
 * Once I have learned NixOS, I should like to reimplement everything from Zebiantu in Nix. This would enable post-installation settings sync, and it would permit things (like `zrepl`) that are not viable in a shell-based installation system.
 
-## License
-Copyright © 2025–2026 Miles Bradley Huff. Licensed publicly per the terms of the GNU General Public License (v3.0 or later).
+## Legal
+Copyright © 2025–2026 Miles Bradley Huff.
+
+Zebiantu is not an operating system, not a platform, and not intended for regulated contexts; rather, it is simply a configuration layer that customizes an operating system (either Debian or Ubuntu), and in that vein Zebiantu is useless without a full copy of either. The scripts that comprise the Zebiantu project are intended for primarily-headless, server-class deployments; they are *not* suitable for end-user deployments. Operators are *solely* responsible for determining whether their use of this repo falls within the scope of the laws applicable to them.
+
+This project is not validated or intended for use in jurisdictions that impose user-identification obligations at the operating system layer (including but not limited to: Brazil, California, and Colorado). Out of an abundance of caution, no license is granted in such contexts. If this context applies to you: do not download or utilize this project. In all other contexts, this repository is licensed for use under the terms of the GNU General Public License (v3.0 or later). In the case of redistribution, it is the responsibility of the redistributor (not the author of this project) to not vend where they are unable to meet the legal obligations of a vendor.
+
+*Nota Bene*: I built this for personal use in my homelab and have only shared it online in case it may be of reference value for others. I have no intention of maintaining public infrastructure.
