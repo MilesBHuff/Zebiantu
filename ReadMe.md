@@ -84,13 +84,13 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Installs various necessary applications.
     * Sets up network interface passthrough.
     * Sets up an OPNsense VM.
-    * Configures auto-restarts (because no ECC).
+    * Configures auto-restarts (because no ECC). [WIP] Refuse to restart if the last upgrade failed or if an upgrade is in-progress.
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-morpheus`: For my AI inference box.
     * Installs various necessary applications.
     * [WIP] installs various things necessary for running inference (including ROCm).
-    * Configures auto-restarts (because no ECC).
+    * Configures auto-restarts (because no ECC). [WIP] Refuse to restart if the last upgrade failed or if an upgrade is in-progress.
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
 * `configure-ups-client`:
