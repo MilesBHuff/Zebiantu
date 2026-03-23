@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 function helptext {
     echo 'Usage: partition-data.bash device0 [device1 ...]'
+    echo 'NOTE: On ZFS 2.4+, you no longer need to use this script — your svdev will automatically be used for ZIL when there is no SLOG.' #DEPRECATED
     echo
     echo 'Please pass as arguments all the block devices you wish to partition.'
     echo 'The provided block devices will all be given the same partition layout.'
