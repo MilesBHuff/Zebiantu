@@ -39,7 +39,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
     ENV_FILESYSTEM_ENVFILE \
     ENV_SETUP_ENVFILE
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
-    ENV_POOL_NAME_OS
+    ENV_POOL_NAME_SYS
 load_envfile "$ENV_SETUP_ENVFILE" \
     DEBIAN_VERSION \
     ENV_KERNEL_COMMANDLINE_DIR
@@ -217,12 +217,12 @@ reschedule-timer 'zfstrim.timer' '*-*-7,14,21,28 2:00' '10m' '0'
 # reschedule-timer 'smart-long@.timer' '*-1,5,9-3 1:00' '10m' '0'
 
 ## SCRUBS (will take a long time)
-reschedule-timer "zfs-scrub@$ENV_POOL_NAME_OS.timer"  '*-3,7,11-1 1:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_SYS.timer"  '*-3,7,11-1 1:00' '10m' '0' ## Will hopefully finish before dawn so that there aren't two scrubs running when people are accessing services.
 reschedule-timer "zfs-scrub@$ENV_POOL_NAME_NAS.timer" '*-3,7,11-1 1:00' '10m' '0'
 
 ## BACKUP MAINTENANCE
 # reschedule-timer 'smart-short@.timer'                '*-*-15 1:00' '10m' '0'
-reschedule-timer "zfs-scrub@$ENV_POOL_NAME_DAS.timer" '*-*-1 3:00'  '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_BAK.timer" '*-*-1 3:00'  '10m' '0'
 
 ## DONE
 systemctl daemon-reload
@@ -239,7 +239,7 @@ firewall-cmd --set-default-zone=internal
 cat >> '/etc/sanoid/sanoid.conf' <<EOF
 
 ## Backups are controlled by Syncoid, not by Sanoid.
-[$ENV_POOL_NAME_DAS]
+[$ENV_POOL_NAME_BAK]
     use_template = none
 [$ENV_POOL_NAME_NAS]
     use_template = min
@@ -277,7 +277,7 @@ update-initramfs -u
 ## Snapshot
 echo ':: Creating snapshot...'
 set +e
-zfs snapshot -r "$ENV_POOL_NAME_OS@install-aetherius"
+zfs snapshot -r "$ENV_POOL_NAME_SYS@install-aetherius"
 set -e
 
 ## Done

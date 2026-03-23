@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function helptext {
-    echo "Usage: create-os.bash"
+    echo "Usage: create-sys.bash"
     echo
     echo 'Warning: This script does not check validity — make sure your pool exists.'
 }
@@ -14,7 +14,7 @@ else
     exit 2
 fi
 if [[
-    -z "$ENV_POOL_NAME_OS" ||\
+    -z "$ENV_POOL_NAME_SYS" ||\
     -z "$ENV_SNAPSHOT_NAME_INITIAL" ||\
     -z "$ENV_ZFS_ROOT"
 ]]; then
@@ -79,35 +79,35 @@ while [[ $I -lt $COUNT ]]; do
             -o canmount=off \
             -o mountpoint=none \
             \
-            "$ENV_POOL_NAME_OS${DATASETS[$I]}"
+            "$ENV_POOL_NAME_SYS${DATASETS[$I]}"
     else
         zfs create \
             \
             -o canmount=$([[ ${MOUNTS[$I]} == '/' ]] && echo noauto || echo on) \
             -o mountpoint="${MOUNTS[$I]}" \
             \
-            "$ENV_POOL_NAME_OS${DATASETS[$I]}"
+            "$ENV_POOL_NAME_SYS${DATASETS[$I]}"
     fi
-    zfs snapshot "$ENV_POOL_NAME_OS${DATASETS[$I]}@$ENV_SNAPSHOT_NAME_INITIAL"
+    zfs snapshot "$ENV_POOL_NAME_SYS${DATASETS[$I]}@$ENV_SNAPSHOT_NAME_INITIAL"
     ((++I))
 done
 set +e
 
 ## Configure datasets
-zfs set com.sun:auto-snapshot=false "$ENV_POOL_NAME_OS/OS/junk"
-# zfs set com.sun:auto-snapshot=false "$ENV_POOL_NAME_OS/data/containers" ## Not backed-up if not snapshotted.
-zpool set bootfs="$ENV_POOL_NAME_OS/OS" "$ENV_POOL_NAME_OS"
+zfs set com.sun:auto-snapshot=false "$ENV_POOL_NAME_SYS/OS/junk"
+# zfs set com.sun:auto-snapshot=false "$ENV_POOL_NAME_SYS/data/containers" ## Not backed-up if not snapshotted.
+zpool set bootfs="$ENV_POOL_NAME_SYS/OS" "$ENV_POOL_NAME_SYS"
 
 ## Ensure that `/etc/zfs/zpool.cache` exists and that everything is mounted.
 if [[ ! -f '/etc/zfs/zpool.cache' ]]; then
-    zpool export -f "$ENV_POOL_NAME_OS"
-    zpool import -d /dev/disk/by-id -R "$ENV_ZFS_ROOT/$ENV_POOL_NAME_OS" -N "$ENV_POOL_NAME_OS"
-    zfs load-key "$ENV_POOL_NAME_OS"
-    zfs mount "$ENV_POOL_NAME_OS/OS"
-    zfs mount "$ENV_POOL_NAME_OS/data/srv"
-    zfs mount "$ENV_POOL_NAME_OS/data/home"
-    zfs mount "$ENV_POOL_NAME_OS/data/home/mail"
-    zfs mount "$ENV_POOL_NAME_OS/data/home/root"
+    zpool export -f "$ENV_POOL_NAME_SYS"
+    zpool import -d /dev/disk/by-id -R "$ENV_ZFS_ROOT/$ENV_POOL_NAME_SYS" -N "$ENV_POOL_NAME_SYS"
+    zfs load-key "$ENV_POOL_NAME_SYS"
+    zfs mount "$ENV_POOL_NAME_SYS/OS"
+    zfs mount "$ENV_POOL_NAME_SYS/data/srv"
+    zfs mount "$ENV_POOL_NAME_SYS/data/home"
+    zfs mount "$ENV_POOL_NAME_SYS/data/home/mail"
+    zfs mount "$ENV_POOL_NAME_SYS/data/home/root"
 fi
 
 ## Done

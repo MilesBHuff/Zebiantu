@@ -22,9 +22,9 @@ apt install -y clevis clevis-tpm2 tpm2-tools
 #NOTE: Apparently there aren't great ways to do this from the OS; it should be done at firmware level.
 
 ## Seal to TPM
-KEY="/etc/zfs/keys/$ENV_POOL_NAME_OS.key"
+KEY="/etc/zfs/keys/$ENV_POOL_NAME_SYS.key"
 BLOB_DIR='/etc/zfsbootmenu/keys'
-BLOB="$BLOB_DIR/$ENV_POOL_NAME_OS.jwe"
+BLOB="$BLOB_DIR/$ENV_POOL_NAME_SYS.jwe"
 install -dm 0755 "$BLOB_DIR"
 clevis encrypt tpm2 '{"pcr_ids":"7"}' < "$KEY" > "$BLOB"
 unset KEY

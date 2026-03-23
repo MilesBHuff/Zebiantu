@@ -11,7 +11,7 @@ ZFS_VERSION="$(zfs --version | head -n1 | cut -c5-)"
 dpkg --compare-versions "$ZFS_VERSION" lt 2.2 && idempotent_append 'REMAKE_INITRD=yes' '/etc/dkms/zfs.conf' ## Needed on ZFS < 2.2, deprecated on ZFS >= 2.2
 unset ZFS_VERSION
 mkdir -p '/etc/zfs/zfs-list.cache'
-touch "/etc/zfs/zfs-list.cache/$ENV_POOL_NAME_OS"
+touch "/etc/zfs/zfs-list.cache/$ENV_POOL_NAME_SYS"
 # zed -F
 TARGET_ESCAPED=$(printf '%s\n' "$TARGET" | sed 's/[\/&]/\\&/g') #AI
 [[ -n "$TARGET_ESCAPED" ]] || exit 99

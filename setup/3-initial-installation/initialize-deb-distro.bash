@@ -38,7 +38,7 @@ echo ':: Getting the environment...'
 ## Load and validate environment variables
 load_envfile "$ROOT_DIR/filesystem-env.sh" \
     ENV_NAME_ESP \
-    ENV_POOL_NAME_OS \
+    ENV_POOL_NAME_SYS \
     ENV_ZFS_ROOT
 load_envfile "$ROOT_DIR/setup-env.sh" \
     ENV_SETUP_ENVFILE \
@@ -47,7 +47,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
 
 echo ':: Setting the target...'
 ## Validate and set our sights on the directory which will contain the new operating system
-export TARGET="$ENV_ZFS_ROOT/$ENV_POOL_NAME_OS"
+export TARGET="$ENV_ZFS_ROOT/$ENV_POOL_NAME_SYS"
 if ! mountpoint -q "$TARGET"; then
     echo "ERROR: Target '$TARGET' not mounted!" >&2
     exit 4

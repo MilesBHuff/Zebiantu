@@ -82,20 +82,20 @@ cat > "$SANOID_CONF" <<EOF
 ################################################################################
 ## Datasets
 
-[$ENV_POOL_NAME_OS/OS]
+[$ENV_POOL_NAME_SYS/OS]
     use_template = min
-[$ENV_POOL_NAME_OS/OS/junk]
+[$ENV_POOL_NAME_SYS/OS/junk]
     use_template = none
 
-[$ENV_POOL_NAME_OS/data]
+[$ENV_POOL_NAME_SYS/data]
     use_template = min
 EOF
 [[ $YES_VM -eq 1 ]] && cat >> "$SANOID_CONF" <<EOF
-[$ENV_POOL_NAME_OS/data/vm]
+[$ENV_POOL_NAME_SYS/data/vm]
     use_template = min
 EOF
 [[ $YES_CONTAINER -eq 1 ]] && cat >> "$SANOID_CONF" <<EOF
-[$ENV_POOL_NAME_OS/data/containers]
+[$ENV_POOL_NAME_SYS/data/containers]
     use_template = backup
 EOF
 systemctl enable 'sanoid.timer'

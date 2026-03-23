@@ -75,7 +75,7 @@ zfs create \
     -o secondarycache=none \
     -o compression=zstd-19 \
     -o com.sun:auto-snapshot=false \
-    "$ENV_POOL_NAME_OS/zram-writeback"
+    "$ENV_POOL_NAME_SYS/zram-writeback"
 apt install -y systemd-zram-generator
 ## Yes, I know that `zram-fraction` is redundant when using `zram-size`; I'm just setting it and `max-zram-size` (which must be disabled else `zram-size` is ignored) to cleanly override the defaults for `[zram0]`.
 cat > '/etc/systemd/zram-generator.conf.d/zram0.conf' <<EOF
@@ -95,7 +95,7 @@ compression-algorithm = zstd(level=5)
 max-zram-size = none
 zram-fraction = 0.1666666666666667
 zram-size = ram / 6
-writeback-device = /dev/zvol/$ENV_POOL_NAME_OS/zram-writeback
+writeback-device = /dev/zvol/$ENV_POOL_NAME_SYS/zram-writeback
 EOF
 ## These overrides ensure that each writeback device is ready before we start its zram swap device.
 cat > '/etc/systemd/system/systemd-zram-setup@zram0.service.d/override.conf' <<EOF
@@ -109,7 +109,7 @@ cat > '/etc/systemd/system/systemd-zram-setup@zram1.service.d/override.conf' <<E
 Requires=zfs.target zfs-import.target
 After=zfs.target zfs-import.target
 RequiresMountsFor=/dev/zvol
-ConditionPathExists=/dev/zvol/$ENV_POOL_NAME_OS/zram-writeback
+ConditionPathExists=/dev/zvol/$ENV_POOL_NAME_SYS/zram-writeback
 EOF
 ## These are explanations of why you should not use zram for `/tmp` and `/run`.
 cat > '/etc/systemd/zram-generator.conf.d/tmp.conf' <<'EOF'
@@ -169,7 +169,7 @@ idempotent_append 'vm.page-cluster=0' '/etc/sysctl.d/62-io-tweakable.conf' ## Wi
 ## In a mirror, such as is common for zpools, the effective average concurrency you may suspect should be intermediate between the extremes of 1 drive and all the drives. For a two-way mirror, that's 1.5.
 ## Per AI, a figure representative of a typical enterprise-grade SATA SSD for 4K random reads per second is 96K. If we scale that by 1.5 to represent a mirror, we get 144K.
 ## Also per AI, a figure representative of a zram swap with zstd compression on a typical computer with DDR4-ECC could be around 700K, based on some online benchmarks; but the exact number varies wildly by hardware and compression level.
-## If we ratio those two, we get an optimal swappiness of 166. Sanity check: that's in-line with other recommendations. Pop!_OS ships with 180, and a kernel.org example used 133.
+## If we ratio those two, we get an optimal swappiness of 166. Sanity check: that's in-line with other recommendations. Pop!_SYS ships with 180, and a kernel.org example used 133.
 ##
 ## It is important to note that this value is just meant as a general-purpose "probably okay" figure. Your specific hardware (CPU, RAM, storage devices, storage topology) can have wildly different optimums.
 ## The algorithm to use is: `200 * ((s / d) / (1 + (s / d)))` (where `s` is "swap IOPS" and `d` is "disk IOPS")

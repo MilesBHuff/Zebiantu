@@ -4,19 +4,19 @@
 ################################################################################
 ## Names
 
+export ENV_POOL_NAME_BAK='bak-pool'
 export ENV_POOL_NAME_NAS='nas-pool'
-export ENV_POOL_NAME_DAS='das-pool'
-export ENV_POOL_NAME_OS='os-pool'
+export ENV_POOL_NAME_SYS='sys-pool'
 
 export ENV_NAME_CACHE='cache'
 export ENV_NAME_ESP='esp'
-export ENV_NAME_OS='os'
+export ENV_NAME_OSP='osp'
 export ENV_NAME_RESERVED='reserved'
-export ENV_NAME_SLOG='slog'
+export ENV_NAME_SLOG='slog' #DEPRECATED
 export ENV_NAME_SVDEV='svdev'
 export ENV_NAME_VDEV='vdev'
 
-export ENV_NAME_OS_LUKS="crypt-$ENV_NAME_OS"
+export ENV_NAME_OSP_LUKS="crypt-$ENV_NAME_OSP" #DEPRECATED
 
 export ENV_SNAPSHOT_NAME_INITIAL='initial'
 
@@ -29,7 +29,7 @@ export ENV_ZFS_ROOT='/media/zfs'
 ## Mount Options
 
 export ENV_MOUNT_OPTIONS_ESP='noatime,lazytime,sync,flush,tz=UTC,iocharset=utf8,fmask=0137,dmask=0027,nodev,noexec,nosuid'
-export ENV_MOUNT_OPTIONS_OS='noatime,lazytime,ssd,discard=async,compress=lzo' ## These options are for btrfs. This variable is currently unused.
+export ENV_MOUNT_OPTIONS_SYS='noatime,lazytime,ssd,discard=async,compress=lzo' ## These options are for btrfs. This variable is currently unused.
 export ENV_MOUNT_OPTIONS_ZVOL='noatime,lazytime,inode64,logbufs=8,logbsize=256k'
 
 ################################################################################
@@ -44,8 +44,8 @@ export ENV_SECTOR_SIZE_HDD=4096
 export ENV_SECTOR_SIZE_LOGICAL_HDD=4096
 export ENV_SECTOR_SIZE_SSD=4096
 export ENV_SECTOR_SIZE_LOGICAL_SSD=512
-export ENV_SECTOR_SIZE_OS=512         ## Specifically the NAS's OS
-export ENV_SECTOR_SIZE_LOGICAL_OS=512 ## Specifically the NAS's OS
+export ENV_SECTOR_SIZE_SYS=512         ## Specifically the NAS's OS
+export ENV_SECTOR_SIZE_LOGICAL_SYS=512 ## Specifically the NAS's OS
 export ENV_SECTOR_SIZE_AI=4096
 export ENV_SECTOR_SIZE_LOGICAL_AI=4096
 

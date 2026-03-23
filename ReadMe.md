@@ -32,9 +32,9 @@ Scripts that configure firmware. There are presently two:
 
 #### partition + format
 Scripts that produce one of the following:
-* `os-pool`: a ZFS pool containing a mirror of SSD partitions for an operating system, and an mdadm RAID1 of SSD partitions which contains an ESP.
+* `sys-pool`: a ZFS pool containing a mirror of SSD partitions, for an operating system; and an mdadm RAID1 of SSD partitions, formatted as FAT32 for use as an ESP.
 * `nas-pool`: a ZFS pool containing an HDD mirror for VDEV (bulk data), and an SSD mirror for SVDEV (metadata + small files + ZIL).
-* `das-pool`: a ZFS pool containing one or more HDDs, intended to be used as a backup of `nas-pool`. You can make several of these; just make sure you do not import them at the same time, as their names will conflict.
+* `bak-pool`: a ZFS pool containing one or more HDDs, intended to be used for backups, primarily of `nas-pool`. You can make several of these; just make sure you do not import them at the same time, as their names will conflict.
 
 #### initial installation
 Scripts that install an operating system to a ZFS root. These scripts are capable of handling Debian and Ubuntu.† **(Particularly stand-out features are emboldened.)**
@@ -116,7 +116,7 @@ Scripts that can be sourced at the commandline.
 
 ### tasks
 Scripts meant to standardize and simplify specific recurrent actions.
-* `rclonoid-from-das-to-nas`: This is a way to resilver from backup, after recreating the NAS's zpool from scratch. Used a couple times while optimizing pool and dataset properties.
+* `rclonoid-from-bak-to-nas`: This is a way to resilver from backup, after recreating the NAS's zpool from scratch. Used a couple times while optimizing pool and dataset properties.
 * `replicate-zfs`: Uses `zfs send | recv` to send data between two zpools that share history. You can select between a few different options for how to do this. The script is still somewhat experimental.
 
 ### tests

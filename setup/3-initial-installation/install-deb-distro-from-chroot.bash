@@ -39,7 +39,7 @@ echo ':: Getting the environment...'
 ## Load and validate environment variables
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
     ENV_NAME_ESP \
-    ENV_POOL_NAME_OS \
+    ENV_POOL_NAME_SYS \
     ENV_ZFS_ROOT
 load_envfile "$ENV_SETUP_ENVFILE" \
     DEBIAN_VERSION \
@@ -91,7 +91,7 @@ done
 ## Snapshot
 echo ':: Creating snapshot...'
 set +e
-zfs snapshot -r "$ENV_POOL_NAME_OS@install-from-chroot"
+zfs snapshot -r "$ENV_POOL_NAME_SYS@install-from-chroot"
 set -e
 
 ## Done

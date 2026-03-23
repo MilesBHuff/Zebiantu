@@ -39,7 +39,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
     ENV_FILESYSTEM_ENVFILE \
     ENV_SETUP_ENVFILE
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
-    ENV_POOL_NAME_OS
+    ENV_POOL_NAME_SYS
 load_envfile "$ENV_SETUP_ENVFILE" \
     UBUNTU_VERSION \
     USERNAME \
@@ -148,7 +148,7 @@ RandomizedDelaySec=$4
 EOF
 }
 
-reschedule-timer "zfs-scrub@$ENV_POOL_NAME_OS.timer" '*-*-1 1:00'          '10m' '0'
+reschedule-timer "zfs-scrub@$ENV_POOL_NAME_SYS.timer" '*-*-1 1:00'          '10m' '0'
 # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
 # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
 reschedule-timer 'fstrim.timer'                       '*-*-7,14,21,28 2:00' '10m' '0'
@@ -190,7 +190,7 @@ update-initramfs -u
 ## Snapshot
 echo ':: Creating snapshot...'
 set +e
-zfs snapshot -r "$ENV_POOL_NAME_OS@install-morpheus"
+zfs snapshot -r "$ENV_POOL_NAME_SYS@install-morpheus"
 set -e
 
 ## Done

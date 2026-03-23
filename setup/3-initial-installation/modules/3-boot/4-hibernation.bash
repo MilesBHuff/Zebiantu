@@ -85,7 +85,7 @@ elif [[ command -v 'dracut' || command -v 'systemd-hibernate-resume' ]]; then
     if [[ $CONTINUE -eq 1 ]]; then
         SWAP_LABEL="hiberswap"
         ZVOL_NAME="hibervol"
-        ZVOL_PATH_IN_ZPOOL="$ENV_POOL_NAME_OS/$ZVOL_NAME"
+        ZVOL_PATH_IN_ZPOOL="$ENV_POOL_NAME_SYS/$ZVOL_NAME"
         ZVOL_PATH_IN_DEV="/dev/zvol/$ZVOL_PATH_IN_ZPOOL"
 
         #############################
@@ -102,7 +102,7 @@ elif [[ command -v 'dracut' || command -v 'systemd-hibernate-resume' ]]; then
 #!/bin/sh
 set -eu
 #WARN: Do not run this on systems without sufficient storage to fit the full contents of RAM!
-ZPOOL_DATASET="$ENV_POOL_NAME_OS" ## All other datasets are children of this, and so should be affected by any quota set here.
+ZPOOL_DATASET="$ENV_POOL_NAME_SYS" ## All other datasets are children of this, and so should be affected by any quota set here.
 ZFS_BIN="$(command -v zfs)"
 ## Remove the current quota, if any.
 "\$ZFS_BIN" set 'quota=off' "\$ZPOOL_DATASET"
@@ -132,7 +132,7 @@ EOF
         PREP_SERVICE="/etc/systemd/system/$PREP_NAME.service"
         cat > "$PREP_SERVICE" <<EOF && systemctl enable "$PREP_NAME" #NOTE: No `--now` because we're in a chroot.
 [Unit]
-Description=Set a quota on \`$ENV_POOL_NAME_OS\` that ensures the possibility of hibernation.
+Description=Set a quota on \`$ENV_POOL_NAME_SYS\` that ensures the possibility of hibernation.
 DefaultDependencies=no
 Requires=zfs-import.target
 After=zfs-import.target
@@ -234,7 +234,7 @@ ZPOOL_BIN="$(command -v zpool)"
 SWAP_LABEL="$SWAP_LABEL"
 ZVOL_PATH_IN_ZPOOL="$ZVOL_PATH_IN_ZPOOL"
 ZVOL_PATH_IN_DEV="$ZVOL_PATH_IN_DEV"
-ZPOOL_DATASET="$ENV_POOL_NAME_OS"
+ZPOOL_DATASET="$ENV_POOL_NAME_SYS"
 
 ## Get total RAM
 TOTAL_RAM="\$(awk '/^MemTotal:/ {print \$2}' /proc/meminfo)"
@@ -270,7 +270,7 @@ unset MKSWAP_BIN
 unset SWAPON_BIN ZVOL_PATH_IN_DEV
 
 ## Stop scrubs/resilvers
-"\$ZPOOL_BIN" scrub -s "\$ENV_POOL_NAME_OS" >/dev/null 2>&1 || true
+"\$ZPOOL_BIN" scrub -s "\$ENV_POOL_NAME_SYS" >/dev/null 2>&1 || true
 
 ## Sync I/O and drop unneeded pages
 [ -x "\$CLEAN_MEMORY_BIN" ] && "\$CLEAN_MEMORY_BIN" || true #NOTE: This runs \`sync\` before dropping unneeded caches. This affects only native Linux I/O — *not* ZFS I/O.

@@ -51,7 +51,7 @@ load_envfile "$ROOT_DIR/setup-env.sh" \
     ENV_FILESYSTEM_ENVFILE \
     ENV_SETUP_ENVFILE
 load_envfile "$ENV_FILESYSTEM_ENVFILE" \
-    ENV_POOL_NAME_OS
+    ENV_POOL_NAME_SYS
 load_envfile "$ENV_SETUP_ENVFILE" \
     DEBIAN_VERSION \
     ENV_KERNEL_COMMANDLINE_DIR
@@ -107,7 +107,7 @@ RandomizedDelaySec=$4
 EOF
     }
 
-    reschedule-timer "zfs-scrub@$ENV_POOL_NAME_OS.timer" '*-*-1 1:00'          '10m' '0'
+    reschedule-timer "zfs-scrub@$ENV_POOL_NAME_SYS.timer" '*-*-1 1:00'          '10m' '0'
     # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
     # reschedule-timer 'smart-short@.timer'               '*-*-7,14,21,28 0:00' '10m' '0' #TODO: Get drive WWN (`/dev/disk/by-id/`).
     reschedule-timer 'fstrim.timer'                       '*-*-7,14,21,28 2:00' '10m' '0'
@@ -241,7 +241,7 @@ EOF
 
     ## Create a zvol for the VM.
     ANUBIS_DIR='/srv/anubis'
-    VDISK="$ENV_POOL_NAME_OS/data$ANUBIS_DIR/zvol"
+    VDISK="$ENV_POOL_NAME_SYS/data$ANUBIS_DIR/zvol"
     if ! zfs list -Ho name "$VDISK" >/dev/null 2>&1; then
         declare -i STORAGE=96 ## In gigabytes. Make sure you leave enough for the host to be cozy.
         declare -i VOLBLOCKSIZE=4 ## `4` matches ashift=12 and so avoids RMW in exchange for more metadata. We are neither storage-limited nor memory-limited in this appliance, so this is the right value.
@@ -270,7 +270,7 @@ EOF
     ## Snapshot
     echo ':: Creating snapshot...'
     set +e
-    zfs snapshot -r "$ENV_POOL_NAME_OS@install-duat"
+    zfs snapshot -r "$ENV_POOL_NAME_SYS@install-duat"
     set -e
 
     ## Notify user
@@ -369,7 +369,7 @@ EOF
     ## Snapshot
     echo ':: Creating snapshot...'
     set +e
-    zfs snapshot -r "$ENV_POOL_NAME_OS@install-anubis"
+    zfs snapshot -r "$ENV_POOL_NAME_SYS@install-anubis"
     set -e
 
     ## Done

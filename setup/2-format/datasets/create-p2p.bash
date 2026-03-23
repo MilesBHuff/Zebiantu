@@ -16,7 +16,7 @@ else
     exit 2
 fi
 if [[
-    -z "$ENV_POOL_NAME_OS" ||\
+    -z "$ENV_POOL_NAME_SYS" ||\
     -z "$ENV_SNAPSHOT_NAME_INITIAL" ||\
     -z "$ENV_ZFS_ROOT"
 ]]; then
@@ -25,7 +25,7 @@ if [[
 fi
 
 ## Create dataset
-DATASET_NAME="$ENV_POOL_NAME_OS/data/srv/p2p"
+DATASET_NAME="$ENV_POOL_NAME_SYS/data/srv/p2p"
 MOUNTPOINT='/srv/p2p'
 zfs create \
     \

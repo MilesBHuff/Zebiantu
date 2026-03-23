@@ -73,9 +73,9 @@ if [ ! -f "$ENV_CACHE" ]; then
         EXPORTABLES=''
         for KEY in \
             ENV_NVME_QUEUE_DEPTH \
-            ENV_POOL_NAME_DAS \
+            ENV_POOL_NAME_BAK \
             ENV_POOL_NAME_NAS \
-            ENV_POOL_NAME_OS \
+            ENV_POOL_NAME_SYS \
             ENV_RECORDSIZE_HDD \
             ENV_RECORDSIZE_SSD
         do

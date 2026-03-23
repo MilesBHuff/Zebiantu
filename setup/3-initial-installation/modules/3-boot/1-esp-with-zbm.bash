@@ -80,13 +80,13 @@ case $DISTRO in
 esac
 KEYDIR=/etc/zfs/keys
 install -m 700 -d "$KEYDIR"
-KEYFILE="$KEYDIR/$ENV_POOL_NAME_OS.key"
+KEYFILE="$KEYDIR/$ENV_POOL_NAME_SYS.key"
 if [[ ! -f "$KEYFILE" ]]; then
     install -m 600 '/dev/null' "$KEYFILE"
     read -rp "A file is about to open; enter your ZFS encryption password into it. This is necessary to prevent double-prompting during boot. Press 'Enter' to continue. " _; unset _
     nano "$KEYFILE"
 fi
-zfs set keylocation=file://"$KEYFILE" "$ENV_POOL_NAME_OS"
+zfs set keylocation=file://"$KEYFILE" "$ENV_POOL_NAME_SYS"
 echo 'UMASK=0077' > /etc/initramfs-tools/conf.d/umask.conf
 echo "FILES=\"$KEYDIR/*\"" > /etc/initramfs-tools/conf.d/99-zfs-keys.conf
 unset KEYDIR KEYFILE

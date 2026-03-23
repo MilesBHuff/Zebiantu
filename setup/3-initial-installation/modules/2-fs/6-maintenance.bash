@@ -33,7 +33,7 @@ EOF
 ## Configure scrubs
 echo ':: Configuring scrubs...'
 cp -a '/etc/systemd/system/zfs-scrub-monthly@.timer' '/etc/systemd/system/zfs-scrub@.timer' &&\
-    systemctl enable "zfs-scrub@$ENV_POOL_NAME_OS.timer"
+    systemctl enable "zfs-scrub@$ENV_POOL_NAME_SYS.timer"
 
 ## Configure SMART
 echo ':: Configuring SMART...'
