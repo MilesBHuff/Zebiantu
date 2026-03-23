@@ -122,12 +122,10 @@ Scripts meant to standardize and simplify specific recurrent actions.
 ### tests
 Scripts that test some functionality. At present, the only test is one of ZFS compression speeds and ratios.
 
-## Upcoming features
+## Upcoming
 These will be implemented once Zebiantu is feature-complete.
-* ZFS 2.4 support
-    * Automatic defragmentation: a daemon that periodically checks file fragmentation for files physically located on an HDD, and runs `zfs rewrite` on anything found to have significant fragmentation.
-* dracut vs initramfs
-    * Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same init. Ubuntu made the switch in 25.10, and Debian plans to in 2027. Zebiantu will not support Ubuntu 26.04 until Debian 14 and Proxmox VE 10 have released.
+* Automatic defragmentation: Thanks to the `rewrite` command added in ZFS 2.3.4, it is now possible to defragment files. I would like to have a command that checks file fragmentation for files physically located on an HDD, and runs `zfs rewrite` on anything found to have significant fragmentation.
+* dracut and hibernation: Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same bootstrap. Ubuntu made the switch to dracut in 25.10, and Debian plans to in 2027. Accordingly, Zebiantu cannot support Ubuntu 26.04 until Debian 14 has released. Once Zebiantu has dracut, hibernation should become possible.
 
 ## Notes
 * Why `sanoid`/`syncoid` instead of `zrepl`?  While `zrepl` *is* technically  superior, its use of YAML over plaintext configs makes it intractable for a shell-based installer such as this.
