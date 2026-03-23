@@ -33,7 +33,7 @@ Scripts that configure firmware. There are presently two:
 #### partition + format
 Scripts that produce one of the following:
 * `os-pool`: a ZFS pool containing a mirror of SSD partitions for an operating system, and an mdadm RAID1 of SSD partitions which contains an ESP.
-* `nas-pool`: a ZFS pool containing an HDD mirror for bulk data and mirrors of SSD partitions for SLOG and for SVDEV (metadata / small files).
+* `nas-pool`: a ZFS pool containing an HDD mirror for VDEV (bulk data), and an SSD mirror for SVDEV (metadata + small files + ZIL).
 * `das-pool`: a ZFS pool containing one or more HDDs, intended to be used as a backup of `nas-pool`.
 
 #### initial installation
