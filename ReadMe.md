@@ -133,10 +133,18 @@ These will be implemented once Zebiantu is feature-complete.
 * Once I have learned NixOS, I should like to reimplement everything from Zebiantu in Nix. This would enable post-installation settings sync, and it would permit things (like `zrepl`) that are not viable in a shell-based installation system.
 
 ## Legal
-Copyright © 2025–2026 Miles Bradley Huff.
 
-Zebiantu is not an operating system, not a platform, and not intended for regulated contexts; rather, it is simply a configuration layer that customizes an operating system (either Debian or Ubuntu), and in that vein Zebiantu is useless without a full copy of either. The scripts that comprise the Zebiantu project are intended for primarily-headless, server-class deployments; they are *not* suitable for end-user deployments. Operators are *solely* responsible for determining whether their use of this repo falls within the scope of the laws applicable to them.
+Copyright © 2025–2026 Miles Bradley Huff.  
+Publicly licensed under the GNU General Public License, version 3 or (at your option) any later version.
 
-This project is not validated or intended for use in jurisdictions that impose user-identification obligations at the operating system layer (including but not limited to: Brazil, California, and Colorado). Out of an abundance of caution, no license is granted in such contexts. If this context applies to you: do not download or utilize this project. In all other contexts, this repository is licensed for use under the terms of the GNU General Public License (v3.0 or later). In the case of redistribution, it is the responsibility of the redistributor (not the author of this project) to not vend where they are unable to meet the legal obligations of a vendor.
+Zebiantu is a collection of system-administration scripts and related configuration logic for advanced, primarily headless, server-class deployments. It is not a standalone operating system, consumer software product, online service, account system, or hosted platform. It depends upon and merely customizes a separately-obtained copy of Debian or Ubuntu. Where it facilitates creation of an initial administrative user during setup, it does so solely by invoking the base distribution’s native account-management utilities, thus leaving all specifics to the underlying operating system and the operator.
 
-*Nota Bene*: I built this for personal use in my homelab and have only shared it online in case it may be of reference value for others. I have no intention of maintaining public infrastructure.
+Zebiantu was developed for my personal homelab and is published as a public resource under the GNU General Public License. I do not operate Zebiantu as a service, provide public instances of or infrastructure for it, market it to minors, or represent it as suitable for general end-user/consumer deployment. No claim is made that this project is suitable for, compliant with, or validated for any particular regulatory context.
+
+Zebiantu is intended for technically competent operators administering systems they directly control. Anyone who interacts with the contents of this repository accordingly does so at their own risk and is solely responsible for compliance with any applicable laws in their jurisdiction.
+
+Any act of redistribution (whether modified or unmodified, source or binary, bundled or standalone) is the sole legal responsibility of the redistributor. There is no implication that I operate, sponsor, certify, validate, support, or approve any third-party actions involving Zebiantu.
+
+Except as expressly provided by the GNU General Public License, no additional permission, warranty, representation, certification, support commitment, compliance undertaking, or legal assurance is provided.
+
+(Disclaimer: This legal section was cowritten with AI.)
