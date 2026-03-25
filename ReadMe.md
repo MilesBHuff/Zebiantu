@@ -1,5 +1,5 @@
 # Zebiantu
-**Zebiantu** — named for its primary parentage, **Z**FS, D**ebia**n, and Ubu**ntu** — is a series of interactive, modular scripts that comprise a holistic, ZFS-first installer and configurator for Debian and Ubuntu. Because Zebiantu is not designed for mass-market adoption, it can make fewer compromises on system architecture than Debian/Ubuntu do stock; consequently, and in the process of putting ZFS first, it diverges quite a bit from their default configurations.
+**Zebiantu** — named for its primary parentage, the **Ze**d filesystem, De**bia**n, and Ubu**ntu** — is a series of interactive, modular scripts that comprise a holistic, ZFS-first installer and configurator for Debian and Ubuntu. Because Zebiantu is not designed for mass-market adoption, it can make fewer compromises on system architecture than Debian/Ubuntu do stock; consequently, and in the process of putting ZFS first, it diverges quite a bit from their default configurations.
 
 Why go to such lengths? Well, a number of core reasons:
 * Ubuntu and multiple Debian derivatives have first-class ZFS support, and no other Linux distro does. I want Linux and I want ZFS; this effectively pigeonholes me here for the time-being.
