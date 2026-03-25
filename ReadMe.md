@@ -124,6 +124,7 @@ Scripts that test some functionality. At present, the only test is one of ZFS co
 
 ## Upcoming
 These will be implemented once Zebiantu is feature-complete.
+* Make the initial installation *just* the *bare*-minimum to get a bootable system, and move the bulk of configuration post-install. (This refactor will free the install scripts from the awkwardness that is a chroot.) The current "post-install" scripts will be rebranded "specialization" scripts.
 * Automatic defragmentation: Thanks to the `rewrite` command added in ZFS 2.3.4, it is now possible to defragment files. I would like to have a command that checks file fragmentation for files physically located on an HDD, and runs `zfs rewrite` on anything found to have significant fragmentation.
 * dracut and hibernation: Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same bootstrap. Ubuntu made the switch to dracut in 25.10, and Debian plans to in 2027. Accordingly, Zebiantu cannot support Ubuntu 26.04 until Debian 14 has released. Once Zebiantu has dracut, hibernation should become possible.
 
