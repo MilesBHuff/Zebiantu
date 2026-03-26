@@ -6,6 +6,8 @@ Why go to such lengths? Well, a number of core reasons:
 * The stock distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure. Yet, there is no reason for them to be: ZFSBootMenu allows encrypted root-on-ZFS (`/boot` included), UEFI allows exclusively using your own custom keys instead of Microsoft's, and TPM auto-unlocking exists and can be used if appropriate.
 * A setup that is not scripted is a setup that is not documented or reproducible. There are so many things that need configuring when you are earnestly setting up a ZFS-based system that it would be foolish to proceed without scripting it.
 
+(Note: While for architectural reasons Debian and Ubuntu are *far* from being my favorite distros, their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them nevertheless the single greatest choices for serious non-distributed storage infrastructure in 2026, apart from perhaps NixOS.)
+
 ## Dependencies
 * Zebiantu is designed to utilize either Debian 13 "Trixie" or Ubuntu 24.04 "Noble Numbat" as its base.
 * Zebiantu is *intended* to run the latest version of ZFS reasonably available (v2.4 at the time of writing). The only way to accomplish this is to use Debian, as it has a backports repo that contains both ZFS and the Linux kernel. Ubuntu runs the version of ZFS that it runs, so it is discouraged to base Zebiantu on Ubuntu unless you absolutely need to and are able to forgo having the latest ZFS features.
@@ -32,31 +34,46 @@ Scripts that configure firmware. There are presently two:
 
 #### partition + format
 Scripts that produce one of the following:
-* `sys-pool`: a ZFS pool containing a mirror of SSD partitions, for an operating system; and an mdadm RAID1 of SSD partitions, formatted as FAT32 for use as an ESP.
-* `nas-pool`: a ZFS pool containing an HDD mirror for VDEV (bulk data), and an SSD mirror for SVDEV (metadata + small files + ZIL).
-* `bak-pool`: a ZFS pool containing one or more HDDs, intended to be used for backups, primarily of `nas-pool`. You can make several of these; just make sure you do not import them at the same time, as their names will conflict.
+* `sys-pool`: a ZFS pool containing a mirror of SSD partitions, for an operating system; and an mdadm RAID1 of SSD partitions, formatted as FAT32 for use as an ESP. The zpool contains several datasets.
+* `nas-pool`: a ZFS pool containing an HDD mirror for VDEV (bulk data), and an SSD mirror for SVDEV (metadata + small files + ZIL). The zpool contains a few datasets.
+* `bak-pool`: a ZFS pool containing one or more HDDs, intended to be used for backups, primarily of `nas-pool`. This zpool begins with only its root dataset. You can create several `bak-pool`s; just make sure you do not import them at the same time, as their names will conflict.
 
-#### initial installation
-Scripts that install an operating system to a ZFS root. These scripts are capable of handling Debian and Ubuntu.† **(Particularly stand-out features are emboldened.)**
+#### install
+Scripts that install Debian/Ubuntu to a ZFS root. These try to accomplish this mission minimally, leaving as much as possible to be configured from the live system. This simplifies further development by giving us an as-simple-as-possible known-booting initial snapshot to build the rest of the system off of. These scripts are *mostly* idempotent, and partly interactive. **(Particularly stand-out features are emboldened.)**
 * `initialize-deb-distro`: Lays the groundwork for and initializes a `chroot` to the target system.
-* `install-deb-distro-from-chroot`: Executes a series of "modules" to set up a `.deb`-based distro from `chroot`.
+* `install-deb-distro-from-chroot`: Executes a series of "modules" to minimally set up a `.deb`-based distro from `chroot`.
     * `base`: Set up the basic features of the operating system.
         * `apt`: Configures `apt` and `full-upgrade`s the system, to avoid any partial upgrades during installation.
-        * `foundations`: Installs things that are foundational to the system and the rest of the script.
-        * `networking`: Configures networking. Notably: standardizes on NetworkManager and firewalld.
-        * `config`: Various mostly-interactive system configurations — the typical stuff you deal with when installing a new operating system.
+        * `foundations`: Installs Linux and other things that are foundational to the system.
+        * `localhost`: Configures the hostname and hosts file.
+        * `config`: Configure locale, timezone, keyboard, etc. Set root's password.
     * `fs`: Configure filesystems.
-        * `zfs`: Configures the system to utilize ZFS.
-        * `fs`: Configures the system to utilize additional filesystems.
+        * `fhs`: Tweaks the system's filesystem hierarchy to facilitate semantic snapshotting.
+        * `usb`: Installs various filesystems that are popular on thumbdrives.
+    * `boot`: Tell the system how to boot.
+        * `esp`: Tells the system how to use the ESP.
+        * `zfs`: Installs ZFS, enables automounting during boot, sets up the zfs cache, and adds ZFS support to initramfs.
+        * `zbm`: Creates a custom ZFSBootMenu image that unlocks **a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
+    * `config`: Various supplementary configurations.
+        * `commandline`: Configures the kernel commandline, taking care to organize and deduplicate the arguments provided by the other modules.
+
+#### configure
+Scripts that configure Debian/Ubuntu to meet my needs. These scripts are *mostly* idempotent, and partly interactive. **(Particularly stand-out features are emboldened.)**
+* `configure-deb-distro`: Executes a series of "modules" to set up a `.deb`-based distro.
+    * `base`: Set up the basic features of the operating system.
+        * `updates`: Sets up unattended upgrades.
+        * `mac`: Sets up mandatory access control.
+        * `networking`: Configures networking. Notably: standardizes on NetworkManager and firewalld.
+        * `users`: Creates default configurations and allows you to create a non-root admin account.
+    * `fs`: Configure filesystems.
+        * `zfs`: Holistically configures ZFS.
         * `maintenance`: Configures periodic trim, scrub, SMART, etc.
-        * `snapshots`: Configures regularly taking and pruning snapshots with timescales appropriate to workload.‡
+        * `snapshots`: Configures regularly taking and pruning snapshots with timescales appropriate to workload.
         * `mount-options`: Make `lazytime` and `noatime` act as *de facto* defaults across the system.
-        * `fhs`: Tweaks the system's filesystem hierarchy.
         * `memory`: Configures system memory: sets up various memory-based filesystems, like `/tmp` and swap; and **configures a tiered memory compression scheme with lighter compression for hotter pages and heavier compression for colder pages, thus roughly tripling available memory.**
     * `boot`: Configure the boot chain. The end-result is strongly resistant to Evil-Maid attacks, and the overall architecture is much-more-elegant than anything shipping today (early 2026). And because it's based around ZFSBootMenu, it is easy to recover from any issues: Just put a vanilla ZBM image on a flash drive, temporarily disable SecureBoot, manually type your password, and fix the issue.
-        * `esp-with-zbm.bash`: Sets up an ESP containing a custom ZFSBootMenu image that unlocks **a Linux system whose entire root (including `/boot`) is on encrypted ZFS.**
-        * `secureboot-with-zbm.bash`: **Sets up SecureBoot using *only* self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
-        * `tpm-autounlock-with-zbm.bash`: Optionally **sets up TPM auto-unlocking for ZFSBootMenu+SecureBoot.** *(Only used on `duat`, the edge router.)*
+        * `secureboot.bash`: **Sets up SecureBoot using *only* self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
+        * `tpm-autounlock.bash`: Optionally **sets up TPM auto-unlocking for ZFSBootMenu+SecureBoot.** *(Only used on `duat`, the edge router.)*
         * `hibernation`: Disables stock hibernation/resume, then optionally **allows hibernation by way of temporary swap zvol** if the system uses dracut to build its initramfs.
     * `apps`: Add and configure various applications.
         * `packages`: Install all sorts of things that the system will need.
@@ -67,27 +84,24 @@ Scripts that install an operating system to a ZFS root. These scripts are capabl
     * `config`: Various supplementary configurations.
         * `sizes`: Disables compression across the operating system to let ZFS compression take over. Also limits the sizes of logs.
         * `sysctl`: Various sysctl tweaks. Improves security, reduces logspam, and improves I/O performance.
-        * `commandline`: Configures the kernel commandline, taking care to organize and deduplicate the arguments provided by the other modules.
+        * `commandline`: Configures the kernel commandline.
 
-* *† Debian and Ubuntu are *far* from being my favorite distros, but their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them the single greatest choices for serious infrastructure in 2026, apart from perhaps NixOS.*
-* *‡ If you convert to Proxmox, try to avoid using Proxmox's builtin snapshotting feature; let `sanoid`/`syncoid` handle everything.*
-
-#### post-installation
-Scripts that tailor an initial install to a specific machine and use-case. At present, there are three:
-* `configure-aetherius`: For my NAS + home server.
+#### specialize
+Scripts that tailor an initial install to a specific machine and use-case. At present, there are three specialization scripts and two optional feature scripts:
+* `specialize-aetherius`: For my NAS + home server.
     * Installs various necessary applications
     * Installs proprietary software for applicable enterprise hardware
     * Sets up the TRNG
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
-* `configure-duat`: For my edge router / firewall.
+* `specialize-duat`: For my edge router / firewall.
     * Installs various necessary applications.
     * Sets up network interface passthrough.
     * Sets up an OPNsense VM.
     * Configures auto-restarts (because no ECC). [WIP] Refuse to restart if the last upgrade failed or if an upgrade is in-progress.
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
-* `configure-morpheus`: For my AI inference box.
+* `specialize-morpheus`: For my AI inference box.
     * Installs various necessary applications.
     * [WIP] installs various things necessary for running inference (including ROCm).
     * Configures auto-restarts (because no ECC). [WIP] Refuse to restart if the last upgrade failed or if an upgrade is in-progress.
@@ -98,9 +112,9 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
 * `configure-ups-server`:
     * [WIP] Configures control over the UPS.
 
-#### conversion
+#### convert
 Scripts that convert Debian / Ubuntu into a derivative.
-* `convert-debian-to-proxmox`: Self-explanatory. Used on Aetherius.
+* `convert-debian-to-proxmox`: Self-explanatory. Used on Aetherius. (Try to avoid using Proxmox's builtin snapshotting feature; let `sanoid`/`syncoid` handle everything.)
 
 ### software
 Scripts that install packages which are not shipped via PPA. Currently, these include:
@@ -124,9 +138,8 @@ Scripts that test some functionality. At present, the only test is one of ZFS co
 
 ## Upcoming
 These will be implemented once Zebiantu is feature-complete.
-* Make the initial installation *just* the *bare*-minimum to get a bootable system, and move the bulk of configuration post-install. (This refactor will free the install scripts from the awkwardness that is a chroot.) The current "post-install" scripts will be rebranded "specialization" scripts.
 * Automatic defragmentation: Thanks to the `rewrite` command added in ZFS 2.3.4, it is now possible to defragment files. I would like to have a command that checks file fragmentation for files physically located on an HDD, and runs `zfs rewrite` on anything found to have significant fragmentation.
-* dracut and hibernation: Zebiantu works on both Ubuntu and Debian, but that is true only so long as both use the same bootstrap. Ubuntu made the switch to dracut in 25.10, and Debian plans to in 2027. Accordingly, Zebiantu cannot support Ubuntu 26.04 until Debian 14 has released. Once Zebiantu has dracut, hibernation should become possible.
+* dracut: I need to rework Zebiantu to use dracut instead of initramfs. Both Debian and Ubuntu are moving in that direction (Debian 14, Ubuntu 25.10), and Zebiantu's hibernation feature won't work without it.
 
 ## Notes
 * Why `sanoid`/`syncoid` instead of `zrepl`?  While `zrepl` *is* technically  superior, its use of YAML over plaintext configs makes it intractable for a shell-based installer such as this.
@@ -134,7 +147,7 @@ These will be implemented once Zebiantu is feature-complete.
 
 ## Legal
 
-Copyright © 2025–2026 Miles Bradley Huff.  
+Copyright © 2025–2026 Miles Bradley Huff.
 Publicly licensed under the GNU General Public License, version 3 or (at your option) any later version.
 
 Zebiantu is a collection of system-administration scripts and related configuration logic for advanced, primarily headless, server-class deployments. It is not a standalone operating system, consumer software product, online service, account system, or hosted platform. It depends upon and merely customizes a separately-obtained copy of Debian or Ubuntu. Where it facilitates creation of an initial administrative user during setup, it does so solely by invoking the base distribution’s native account-management utilities, thus leaving all specifics to the underlying operating system and the operator.
