@@ -60,5 +60,3 @@ apt install -y bsdextrautils curl dracut-core efibootmgr fzf kexec-tools libsort
 make core dracut
 cd "$CWD"
 KERNEL_COMMANDLINE="$KERNEL_COMMANDLINE quiet loglevel=5"
-
-#TODO: Make ZBM host a dropbear ssh service, to enable manual remote unlocks. Ideally, this only starts when unlocking fails.

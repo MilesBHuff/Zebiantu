@@ -84,6 +84,7 @@ Scripts that configure Debian/Ubuntu to meet my needs. These scripts are *mostly
         * `secureboot.bash`: **Sets up SecureBoot using *only* self-signed keys. It includes hooks to auto-sign ZFSBootMenu and kernel modules.**
         * `tpm-autounlock.bash`: Optionally **sets up TPM auto-unlocking for ZFSBootMenu+SecureBoot.** *(Only used on `duat`, the edge router.)*
         * `hibernation`: Disables stock hibernation/resume, then optionally **allows hibernation by way of temporary swap zvol** if the system uses dracut to build its initramfs.
+        * `dropbear`: [WIP] Adds Dropbear `ssh` to ZBM.
     * `apps`: Add and configure various applications.
         * `packages`: Install all sorts of things that the system will need.
         * `time`: Configure the system's time daemon.
