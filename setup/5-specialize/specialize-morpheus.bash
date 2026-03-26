@@ -66,7 +66,7 @@ echo ':: Installing system-specific things...'
 ## Drivers
 apt install -y amd64-microcode firmware-amd-graphics firmware-realtek
 ## Controllers
-apt install -y -t "$UBUNTU_VERSION-backports" openrgb
+apt install -y openrgb
 
 #########################################
 ##   C O N F I G U R E   F O R   A I   ##

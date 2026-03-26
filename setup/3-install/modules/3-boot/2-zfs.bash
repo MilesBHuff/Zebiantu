@@ -33,7 +33,7 @@ systemctl enable zfs-import-cache
 echo ':: Configuring the initramfs to support ZFS...'
 case $DISTRO in
     1) apt install -y -t "$DEBIAN_VERSION-backports" zfs-initramfs ;;
-    2) apt install -y -t "$UBUNTU_VERSION-backports" zfs-initramfs ;;
+    2) apt install -y zfs-initramfs ;;
 esac
 KEYDIR=/etc/zfs/keys
 install -m 700 -d "$KEYDIR"
