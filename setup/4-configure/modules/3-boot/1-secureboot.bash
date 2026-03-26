@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 #NOTE: This script is a fragment sourced by a parent script.
-echo 'You must have SecureBoot enabled in Setup Mode (PK cleared, not enforcing), and the live system must be booted in UEFI mode.' #TODO: Make this warning interactive.
+
+## Make sure the user is prepared to do this.
+echo 'You must have SecureBoot enabled in Setup Mode (PK cleared, not enforcing), and the live system must be booted in UEFI mode.'
+while read -rp 'Continue? (y/n) ' ANSWER; do
+    case "$ANSWER" in
+        y) break ;;
+        n) exit ;; ## We need to exit out, because subsequent boot config scripts depend on SecureBoot being implemented.
+    esac
+done
 
 ## Set up SecureBoot
 SBDIR='/etc/secureboot'
