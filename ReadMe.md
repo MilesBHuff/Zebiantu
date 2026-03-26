@@ -1,12 +1,21 @@
 # Zebiantu
 **Zebiantu** — named for its primary parentage, the **Ze**d filesystem, De**bia**n, and Ubu**ntu** — is a series of interactive, modular scripts that comprise a holistic, ZFS-first installer and configurator for Debian and Ubuntu. Because Zebiantu is not designed for mass-market adoption, it can make fewer compromises on system architecture than Debian/Ubuntu do stock; consequently, and in the process of putting ZFS first, it diverges quite a bit from their default configurations.
 
-Why go to such lengths? Well, a number of core reasons:
-* Ubuntu and multiple Debian derivatives have first-class ZFS support, and no other Linux distro does. I want Linux and I want ZFS; this effectively pigeonholes me here for the time-being.
-* The stock distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure. Yet, there is no reason for them to be: ZFSBootMenu allows encrypted root-on-ZFS (`/boot` included), UEFI allows exclusively using your own custom keys instead of Microsoft's, and TPM auto-unlocking exists and can be used if appropriate.
-* A setup that is not scripted is a setup that is not documented or reproducible. There are so many things that need configuring when you are earnestly setting up a ZFS-based system that it would be foolish to proceed without scripting it.
+Of particular note are the following features:
+* 100% of the OS on encrypted ZFS (even `/boot`)
+* bootstrapping is handled by ZFSBootMenu
+* true self-signed SecureBoot (no Microsoft keys, no shim)
+* optional TPM auto-unlock
+* hibernation support
+* tiered in-memory swap compression
+* a mirrored ESP
+* holistic tuning
+* all regular drive/filesystem maintenance (SMART, scrubs, snapshots) preconfigured
 
-(Note: While for architectural reasons Debian and Ubuntu are *far* from being my favorite distros, their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them nevertheless the single greatest choices for serious non-distributed storage infrastructure in 2026, apart from perhaps NixOS.)
+Why go to such lengths? Well, a number of core reasons:
+* While for architectural reasons Debian and Ubuntu are *far* from being my favorite distros, their and their derivatives' official (read: kernel + ZFS released together in lockstep) support for ZFS makes them nevertheless the single greatest choices for serious non-distributed storage infrastructure in 2026, apart from perhaps NixOS.
+* Stock, these distros do not have an even remotely acceptable boot-chain — they are convoluted, inelegant, and insecure, even though there is no longer any technical reason for them to be.
+* A setup that is not scripted is a setup that is not documented or reproducible. There are so many things that need configuring when you are earnestly setting up a ZFS-based system that it would be foolish to proceed without scripting it.
 
 ## Dependencies
 * Zebiantu is designed to utilize either Debian 13 "Trixie" or Ubuntu 24.04 "Noble Numbat" as its base.
