@@ -147,7 +147,7 @@ Scripts that test some functionality. At present, the only test is one of ZFS co
 
 ## Upcoming
 These will be implemented once Zebiantu is feature-complete.
-* Automatic defragmentation: Thanks to the `rewrite` command added in ZFS 2.3.4, it is now possible to defragment files. I would like to have a command that checks file fragmentation for files physically located on an HDD, and runs `zfs rewrite` on anything found to have significant fragmentation.
+* Automatic defragmentation: Thanks to the `rewrite` command added in ZFS 2.3.4, it is now possible to defragment files. I would like to have a command that checks file fragmentation for files physically located on an HDD and then runs `zfs rewrite` on anything found to have significant fragmentation.
 * dracut: I need to rework Zebiantu to use dracut instead of initramfs. Both Debian and Ubuntu are moving in that direction (Debian 14, Ubuntu 25.10), and Zebiantu's hibernation feature won't work without it.
 
 ## Notes
