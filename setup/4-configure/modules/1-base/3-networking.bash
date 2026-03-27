@@ -1,48 +1,5 @@
 #!/usr/bin/env bash
 #NOTE: This script is a fragment sourced by a parent script.
-echo ':: Configuring networking...'
-
-## Switch to firewalld
-echo ':: Configuring firewall...'
-apt install firewalld
-[[ $DISTRO -eq 2 ]] && systemctl disable ufw || true
-systemctl enable --now firewalld
-
-## Configure WOL
-read -rp 'Enter "y" to enable Wake-On-LAN, or "n" to leave it disabled. ' DO_IT
-if [[ "$DO_IT" == 'y' ]]; then
-    cat > /etc/udev/rules.d/99-wol.rules <<'EOF'
-ACTION=="add", SUBSYSTEM=="net", KERNEL=="en*", RUN+="/usr/sbin/ethtool -s %k wol g"
-ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*", RUN+="/usr/sbin/ethtool -s %k wol g"
-EOF
-fi; unset DO_IT
-
-## Set up `ssh`
-read -rp 'Enter "y" to enable ssh, or "n" to leave it disabled. ' DO_IT
-if [[ "$DO_IT" == 'y' ]]; then
-    apt install -y openssh-server
-    idempotent_append 'PermitRootLogin prohibit-password' '/etc/ssh/sshd_config.d/disable-root.conf'
-    systemctl enable ssh
-fi; unset DO_IT
-
-## Set up fail2ban
-apt install -y fail2ban
-cat > '/etc/fail2ban/jail.local' <<'EOF'
-[DEFAULT]
-backend = systemd
-findtime = 10m
-maxretry = 5
-banaction = firewallcmd-rich-rules
-bantime = 1h
-bantime.increment = true
-bantime.factor = 2
-bantime.max = 24h
-
-[sshd]
-enabled = true
-port = ssh
-#logpath = /var/log/secure
-EOF
 
 ## Switch to NetworkManager
 echo ':: Switching to NetworkManager...'
@@ -96,3 +53,47 @@ EOF
     nmcli general reload
 fi
 unset DO_IT
+
+## Configure WOL
+read -rp 'Enter "y" to enable Wake-On-LAN, or "n" to leave it disabled. ' DO_IT
+if [[ "$DO_IT" == 'y' ]]; then
+    cat > /etc/udev/rules.d/99-wol.rules <<'EOF'
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="en*", RUN+="/usr/sbin/ethtool -s %k wol g"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth*", RUN+="/usr/sbin/ethtool -s %k wol g"
+EOF
+fi; unset DO_IT
+
+## Switch to firewalld
+echo ':: Configuring firewall...'
+apt install firewalld
+[[ $DISTRO -eq 2 ]] && systemctl disable ufw || true
+systemctl enable --now firewalld
+
+## Set up `ssh`
+echo ':: Configuring ssh...'
+read -rp 'Enter "y" to enable ssh, or "n" to leave it disabled. ' DO_IT
+if [[ "$DO_IT" == 'y' ]]; then
+    apt install -y openssh-server
+    idempotent_append 'PermitRootLogin prohibit-password' '/etc/ssh/sshd_config.d/disable-root.conf'
+    systemctl enable ssh
+fi; unset DO_IT
+
+## Set up fail2ban
+echo ':: Configuring limits on ssh...'
+apt install -y fail2ban
+cat > '/etc/fail2ban/jail.local' <<'EOF'
+[DEFAULT]
+backend = systemd
+findtime = 10m
+maxretry = 5
+banaction = firewallcmd-rich-rules
+bantime = 1h
+bantime.increment = true
+bantime.factor = 2
+bantime.max = 24h
+
+[sshd]
+enabled = true
+port = ssh
+#logpath = /var/log/secure
+EOF
