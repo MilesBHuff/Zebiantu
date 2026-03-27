@@ -96,8 +96,12 @@ Scripts that configure Debian/Ubuntu to meet my needs. These scripts are *mostly
         * `sysctl`: Various sysctl tweaks. Improves security, reduces logspam, and improves I/O performance.
         * `commandline`: Configures the kernel commandline.
 
+#### convert
+Scripts that convert Debian / Ubuntu into a derivative.
+* `convert-debian-to-proxmox`: Self-explanatory. Used on Aetherius. (Try to avoid using Proxmox's builtin snapshotting feature; let `sanoid`/`syncoid` handle everything.)
+
 #### specialize
-Scripts that tailor an initial install to a specific machine and use-case. At present, there are three specialization scripts and two optional feature scripts:
+Scripts that tailor the system to a specific machine and use-case. At present, there are three specialization scripts and two optional feature scripts:
 * `specialize-aetherius`: For my NAS + home server.
     * Installs various necessary applications
     * Installs proprietary software for applicable enterprise hardware
@@ -117,14 +121,13 @@ Scripts that tailor an initial install to a specific machine and use-case. At pr
     * Configures auto-restarts (because no ECC). [WIP] Refuse to restart if the last upgrade failed or if an upgrade is in-progress.
     * Schedule maintenance tasks for specific times.
     * Tweaks some settings.
+
+#### features
+Scripts that add additional features.
 * `configure-ups-client`:
     * [WIP] Configures auto-shutdown when remaining UPS runtime is under 5 minutes.
 * `configure-ups-server`:
     * [WIP] Configures control over the UPS.
-
-#### convert
-Scripts that convert Debian / Ubuntu into a derivative.
-* `convert-debian-to-proxmox`: Self-explanatory. Used on Aetherius. (Try to avoid using Proxmox's builtin snapshotting feature; let `sanoid`/`syncoid` handle everything.)
 
 ### software
 Scripts that install packages which are not shipped via PPA. Currently, these include:
