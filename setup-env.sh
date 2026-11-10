@@ -11,5 +11,5 @@ export UBUNTU_VERSION='noble' #TODO: Change once Resolute Racoon (26.04) comes o
 
 ## Misc
 export ENV_ENV_KERNEL_COMMANDLINE_DIR='/etc/zfsbootmenu/commandline'
-export ENV_TUNE_IO_SCRIPT='/usr/local/sbin/tune-zfs'
-export ENV_TUNE_ZFS_SCRIPT='/usr/local/sbin/tune-io'
+export ENV_TUNE_IO_SCRIPT='/usr/local/sbin/tune-io'
+export ENV_TUNE_ZFS_SCRIPT='/usr/local/sbin/tune-zfs'
